@@ -1,108 +1,112 @@
 package org.example.base;
 
-import com.example.grpc.chord.ChordGrpc;
-import com.example.grpc.chord.ChordProto;
+import com.example.grpc.chord.*;
+import com.example.grpc.chord.ChordGrpc.ChordImplBase;
 import io.grpc.stub.StreamObserver;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import com.example.grpc.chord.ChordProto.*;
+import org.example.types.NodeHeader;
 
-public class ChordServiceImpl extends ChordGrpc.ChordImplBase {
-    private final ChordNode localNode;
+public class ChordServiceImpl extends ChordImplBase {
+    private final ChordNode chordNode;
 
-    public ChordServiceImpl(ChordNode localNode) {
-        this.localNode = localNode;
+    public ChordServiceImpl(ChordNode chordNode) {
+        this.chordNode = chordNode;
     }
 
     @Override
-    public void join(ChordProto.JoinRequest request, StreamObserver<ChordProto.JoinResponse> responseObserver) {
+    public void join(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
+
+        responseObserver.onNext(JoinResponse.newBuilder().setSuccess(true).build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void stabilize(StabilizeRequest request, StreamObserver<StabilizeResponse> responseObserver) {
         try {
-            ChordNode n0 = new ChordNode(request.getNewNode().getIp(), request.getNewNode().getPort());
-            localNode.join(n0);
-            ChordProto.JoinResponse response = ChordProto.JoinResponse.newBuilder()
-                    .setSuccess(true)
-                    .setSuccessor(ChordProto.NodeInfo.newBuilder()
-                            .setIp(localNode.getSuccessor().getIp())
-                            .setPort(localNode.getSuccessor().getPort())
-                            .setId(localNode.getSuccessor().getNodeId())
-                            .build())
-                    .build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (IOException | NoSuchAlgorithmException e) {
+            chordNode.stabilize();
+            responseObserver.onNext(StabilizeResponse.newBuilder().setSuccess(true).build());
+        } catch (Exception e) {
             e.printStackTrace();
+            responseObserver.onNext(StabilizeResponse.newBuilder().setSuccess(false).build());
         }
-
+        responseObserver.onCompleted();
     }
 
     @Override
-    public void successor(ChordProto.SuccessorRequest request, StreamObserver<ChordProto.SuccessorResponse> responseObserver) {
-        try {
-            ChordNode successor = localNode.findSuccessor(request.getKeyId());
-            ChordProto.SuccessorResponse response = ChordProto.SuccessorResponse.newBuilder()
-                    .setNode(ChordProto.NodeInfo.newBuilder()
-                            .setIp(successor.getIp())
-                            .setPort(successor.getPort())
-                            .setId(successor.getNodeId())
-                            .build())
-                    .build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public void notify(NotifyRequest request, StreamObserver<NotifyResponse> responseObserver) {
+        NodeInfo callerInfo = request.getCaller();
+        NodeHeader callerNode = new NodeHeader(callerInfo.getIp(), callerInfo.getPort(), callerInfo.getId());
+        chordNode.notify(callerNode);
+        responseObserver.onNext(NotifyResponse.newBuilder().setSuccess(true).build());
+        responseObserver.onCompleted();
     }
 
     @Override
-    public void stabilize(ChordProto.StabilizeRequest request, StreamObserver<ChordProto.StabilizeResponse> responseObserver) {
-        try {
-            localNode.stabilize();
-            ChordProto.StabilizeResponse response = ChordProto.StabilizeResponse.newBuilder()
-                    .setSuccess(true)
+    public void getPredecessor(NodeInfo request, StreamObserver<NodeInfo> responseObserver) {
+        NodeHeader predecessor = chordNode.getPredecessor();
+        if (predecessor != null) {
+            NodeInfo nodeInfo = NodeInfo.newBuilder()
+                    .setId(predecessor.getNodeId())
+                    .setIp(predecessor.getIp())
+                    .setPort(Integer.parseInt(predecessor.getPort()))
                     .build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            responseObserver.onNext(nodeInfo);
+        } else {
+            responseObserver.onNext(NodeInfo.newBuilder().build());
         }
+        responseObserver.onCompleted();
     }
 
     @Override
-    public void notify(ChordProto.NotifyRequest request, StreamObserver<ChordProto.NotifyResponse> responseObserver) {
-        try {
-            ChordNode nx = localNode.findPredecessor(request.getCaller().getId());
-            localNode.notify(nx);
-            responseObserver.onNext(ChordProto.NotifyResponse.newBuilder().setSuccess(true).build());
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public void setPredecessor(NodeInfo request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        NodeHeader predecessor = new NodeHeader(request.getIp(), request.getPort(), request.getId());
+        chordNode.setPredecessor(predecessor);
+        responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+        responseObserver.onCompleted();
+    }
+    @Override
+    public void getSuccessor(NodeInfo request, StreamObserver<NodeInfo> responseObserver) {
+        NodeHeader successor = chordNode.getSuccessor();
+        if (successor != null) {
+            NodeInfo nodeInfo = NodeInfo.newBuilder()
+                    .setId(successor.getNodeId())
+                    .setIp(successor.getIp())
+                    .setPort(Integer.parseInt(successor.getPort()))
+                    .build();
+            responseObserver.onNext(nodeInfo);
+        } else {
+            responseObserver.onNext(NodeInfo.newBuilder().build());
         }
+        responseObserver.onCompleted();
     }
 
-    public void leave(ChordProto.LeaveRequest request, StreamObserver<ChordProto.LeaveResponse> responseObserver) {
-        try {
-            localNode.leave(request.getLeavingNode().getId());
-            ChordProto.LeaveResponse response = ChordProto.LeaveResponse.newBuilder()
-                    .setSuccess(true)
-                    .build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public void setSuccessor(NodeInfo request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        NodeHeader successor = new NodeHeader(request.getIp(), request.getPort(), request.getId());
+        chordNode.setSuccessor(successor);
+        responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+        responseObserver.onCompleted();
     }
 
-    public void ping(ChordProto.PingRequest request, StreamObserver<ChordProto.PingResponse> responseObserver) {
-        try {
-            boolean result = localNode.ping(request.getNode().getId());
-            ChordProto.PingResponse response = ChordProto.PingResponse.newBuilder()
-                    .setAlive(result)
-                    .build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public void updateFingerTable(UpdateFingerTableRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        NodeInfo sNodeInfo = request.getS();
+        int i = request.getI();
+        this.chordNode.updateFingerTable(new NodeHeader(sNodeInfo.getIp(), sNodeInfo.getPort(), sNodeInfo.getId()), i);
+        responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getNodeInfo(GetNodeInfoRequest request, StreamObserver<GetNodeInfoResponse> responseObserver) {
+        NodeInfo nodeInfo = NodeInfo.newBuilder()
+                .setId(chordNode.getNodeId())
+                .setIp(chordNode.getIp())
+                .setPort(chordNode.getPort())
+                .build();
+        responseObserver.onNext(GetNodeInfoResponse.newBuilder().setNode(nodeInfo).build());
+        responseObserver.onCompleted();
     }
 
 }
-

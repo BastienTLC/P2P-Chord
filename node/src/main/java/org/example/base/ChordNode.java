@@ -1,6 +1,6 @@
 package org.example.base;
 
-import org.example.types.Message;
+import org.example.types.NodeHeader;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -8,174 +8,174 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-import org.example.base.FingerTable;
-
 public class ChordNode {
     private final String ip;
     private final int port;
     private final String nodeId; // ID unique du nœud basé sur le hash de l'IP et du port
-    private ChordNode successor; // Le successeur de ce nœud
-    private ChordNode predecessor; // Le prédécesseur de ce nœud
+    private NodeHeader successor; // Le successeur de ce nœud
+    private NodeHeader predecessor; // Le prédécesseur de ce nœud
     private final FingerTable fingerTable; // La table de doigts pour le routage
-    private final MessageStore messageStore; // Le stockage des messages (DHT)
+    private final int m = 5; // Nombre de bits pour l'espace d'identifiants
+    private NodeHeader currentHeader;
 
     public ChordNode(String ip, int port) throws NoSuchAlgorithmException {
         this.ip = ip;
         this.port = port;
-        this.nodeId = hashNode(ip + ":" + port); // Générer l'ID du nœud
-        this.fingerTable = new FingerTable(this); // Crée une Finger Table pour ce nœud
-        this.messageStore = new MessageStore(); // Initialisation du stockage pour la DHT
+        this.nodeId = hashNode(ip + ":" + port);
+        this.fingerTable = new FingerTable(this);
+        this.currentHeader = new NodeHeader(ip, port, nodeId);
     }
 
     // Fonction pour hacher l'ID du nœud basé sur son IP et son port
     private String hashNode(String input) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] hashBytes = md.digest(input.getBytes());
-        return new BigInteger(1, hashBytes).mod(BigInteger.valueOf(32)).toString(); // Mod 32 pour l'anneau
+        BigInteger hashInt = new BigInteger(1, hashBytes);
+        BigInteger mod = BigInteger.valueOf(2).pow(m);
+        return hashInt.mod(mod).toString();
     }
 
-    // Retourne l'ID du nœud
-    public String getNodeId() {
-        return this.nodeId;
-    }
+    // Getters and Setters
+    public String getNodeId() { return this.nodeId; }
+    public String getIp() { return this.ip; }
+    public int getPort() { return this.port; }
+    public NodeHeader getSuccessor() { return this.successor; }
+    public void setSuccessor(NodeHeader successor) { this.successor = successor; }
+    public NodeHeader getPredecessor() { return this.predecessor; }
+    public void setPredecessor(NodeHeader predecessor) { this.predecessor = predecessor; }
+    public FingerTable getFingerTable() { return this.fingerTable; }
 
-    // Retourne l'adresse IP du nœud
-    public String getIp() {
-        return this.ip;
-    }
-
-    // Retourne le port du nœud
-    public int getPort() {
-        return this.port;
-    }
-
-    // Retourne le successeur de ce nœud
-    public ChordNode getSuccessor() {
-        return this.successor;
-    }
-
-    // Définit le successeur de ce nœud
-    public void setSuccessor(ChordNode successor) {
-        this.successor = successor;
-    }
-
-    // Retourne le prédécesseur de ce nœud
-    public ChordNode getPredecessor() {
-        return this.predecessor;
-    }
-
-    // Définit le prédécesseur de ce nœud
-    public void setPredecessor(ChordNode predecessor) {
-        this.predecessor = predecessor;
-    }
-
-    // Retourne la Finger Table associée à ce nœud
-    public FingerTable getFingerTable() {
-        return this.fingerTable;
-    }
-
-    // Retourne l'objet MessageStore pour gérer les messages
-    public MessageStore getMessageStore() {
-        return this.messageStore;
-    }
-
-    public void join(ChordNode existingNode) throws IOException {
-        if (existingNode != null) {
-            fingerTable.initFingerTable(existingNode);
-            updateOthers();
+    // Méthode join
+    public void join(String existingNodeIp, int existingNodePort) throws IOException {
+        if (existingNodeIp != null) {
+            ChordClient chordClient = new ChordClient(existingNodeIp, existingNodePort);
+            fingerTable.initFingerTable(chordClient);
+            this.updateOthers();
+            // Déplacer les clés appropriées du successeur si nécessaire
         } else {
             // Premier nœud dans le réseau
-            for (int i = 0; i < fingerTable.getM(); i++) {
-                fingerTable.getFingers().set(i, this);
+            for (int i = 0; i < m; i++) {
+                fingerTable.getFingers().set(i, currentHeader);
             }
-            this.predecessor = this;
-            this.successor = this;
+            this.predecessor = currentHeader;
+            this.successor = currentHeader;
         }
     }
 
-    public void leave(String nodeId) throws IOException {
-        ChordNode n0 = this.findPredecessor(nodeId);
-        ChordNode n0Successor = n0.getSuccessor();
-        n0.setSuccessor(n0Successor.getSuccessor());
-        n0Successor.setPredecessor(n0);
-        this.updateOthers();
+    // Méthode updateOthers
+    public void updateOthers() throws IOException {
+        BigInteger twoPowerM = BigInteger.valueOf(2).pow(m);
+        for (int i = 0; i < m; i++) {
+            BigInteger offset = BigInteger.valueOf(2).pow(i);
+            BigInteger id = new BigInteger(this.nodeId).subtract(offset).mod(twoPowerM);
+            String idStr = id.toString();
+            NodeHeader p = findPredecessor(idStr);
+            if (p != null) {
+                ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
+                pClient.updateFingerTable(currentHeader, i);
+            }
+        }
     }
 
-    public boolean ping(String nodeId) throws IOException {
-        ChordNode n0 = this.findPredecessor(nodeId);
-        return n0.getPredecessor() != null;
-
+    // Méthode updateFingerTable
+    public void updateFingerTable(NodeHeader s, int i) {
+        NodeHeader currentFinger = fingerTable.getFingers().get(i);
+        if (currentFinger == null || isInIntervalOpenClosed(s.getNodeId(), this.nodeId, currentFinger.getNodeId())) {
+            fingerTable.getFingers().set(i, s);
+            NodeHeader p = this.predecessor;
+            if (p != null) {
+                ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
+                pClient.updateFingerTable(s, i);
+            }
+        }
     }
 
-    // Méthode pour trouver le successeur d'une clé donnée
-    public ChordNode findSuccessor(String key) throws IOException {
-        ChordNode n0 = this.findPredecessor(key);
-        return n0.getSuccessor();
+    // Méthode findSuccessor
+    public NodeHeader findSuccessor(String id) throws IOException {
+        NodeHeader n0 = this.findPredecessor(id);
+        if (n0.equals(this)) {
+            return this.successor;
+        } else {
+            ChordClient n0Client = new ChordClient(n0.getIp(), Integer.parseInt(n0.getPort()));
+            return n0Client.getSuccessor();
+        }
     }
 
-    // Méthode pour trouver le prédécesseur d'une clé donnée
-    public ChordNode findPredecessor(String key) throws IOException {
+    // Méthode findPredecessor
+    public NodeHeader findPredecessor(String id) throws IOException {
         ChordNode n0 = this;
-        ChordNode n0Successor = n0.getSuccessor();
-        while (!isInInterval(key, n0.getNodeId(), n0Successor.getNodeId())) {
-            n0 = fingerTable.closestPrecedingFinger(key);
-            n0Successor = n0.getSuccessor();
+        NodeHeader n0Predecessor = this.predecessor;
+        while (!isInIntervalOpenClosed(id, n0.getNodeId(), n0.getSuccessor().getNodeId())) {
+            NodeHeader closestFinger = n0.closestPrecedingFinger(id);
+            if (closestFinger.equals(n0)) {
+                break;
+            }
+            ChordClient fingerClient = new ChordClient(closestFinger.getIp(), Integer.parseInt(closestFinger.getPort()));
+            n0Predecessor = fingerClient.getNodeInfo();
         }
-        return n0;
+        return n0Predecessor;
     }
 
+    // Méthode closestPrecedingFinger
+    public NodeHeader closestPrecedingFinger(String id) {
+        for (int i = m - 1; i >= 0; i--) {
+            NodeHeader fingerNode = fingerTable.getFingers().get(i);
+            if (fingerNode != null && isInIntervalOpenOpen(fingerNode.getNodeId(), this.nodeId, id)) {
+                return fingerNode;
+            }
+        }
+        return currentHeader;
+    }
 
-    // Fonction de stabilisation : vérifie et met à jour le successeur et le prédécesseur
+    // Fonctions d'intervalle
+    private boolean isInIntervalOpenClosed(String id, String start, String end) {
+        BigInteger idInt = new BigInteger(id);
+        BigInteger startInt = new BigInteger(start);
+        BigInteger endInt = new BigInteger(end);
+        if (startInt.compareTo(endInt) < 0) {
+            return idInt.compareTo(startInt) > 0 && idInt.compareTo(endInt) <= 0;
+        } else if (startInt.compareTo(endInt) > 0) {
+            return idInt.compareTo(startInt) > 0 || idInt.compareTo(endInt) <= 0;
+        } else {
+            return true;
+        }
+    }
+
+    private boolean isInIntervalOpenOpen(String id, String start, String end) {
+        BigInteger idInt = new BigInteger(id);
+        BigInteger startInt = new BigInteger(start);
+        BigInteger endInt = new BigInteger(end);
+        if (startInt.compareTo(endInt) < 0) {
+            return idInt.compareTo(startInt) > 0 && idInt.compareTo(endInt) < 0;
+        } else if (startInt.compareTo(endInt) > 0) {
+            return idInt.compareTo(startInt) > 0 || idInt.compareTo(endInt) < 0;
+        } else {
+            return false;
+        }
+    }
+
+    // Méthode stabilize
     public void stabilize() throws IOException {
-        ChordNode x = successor.getPredecessor();
-        if (x != null && isInInterval(x.getNodeId(), this.nodeId, successor.getNodeId())) {
+        ChordClient successorClient = new ChordClient(successor.getIp(), Integer.parseInt(successor.getPort()));
+        NodeHeader x = successorClient.getPredecessor(successor);
+        if (x != null && isInIntervalOpenOpen(x.getNodeId(), this.nodeId, successor.getNodeId())) {
             this.successor = x;
         }
-        successor.notify(this);
+        successorClient.notify(this);
     }
 
-    // Notifie le nœud actuel qu'il pourrait être le prédécesseur d'un autre nœud
-    public void notify(ChordNode n) {
-        if (this.predecessor == null || isInInterval(n.getNodeId(), this.predecessor.getNodeId(), this.nodeId)) {
+    // Méthode notify
+    public void notify(NodeHeader n) {
+        if (this.predecessor == null || isInIntervalOpenOpen(n.getNodeId(), this.predecessor.getNodeId(), this.nodeId)) {
             this.predecessor = n;
         }
     }
 
-    // Méthode pour vérifier si une clé est dans l'intervalle [start, end]
-    private boolean isInInterval(String key, String start, String end) {
-        BigInteger keyHash = new BigInteger(key);
-        BigInteger startHash = new BigInteger(start);
-        BigInteger endHash = new BigInteger(end);
-
-        if (startHash.compareTo(endHash) < 0) {
-            return keyHash.compareTo(startHash) > 0 && keyHash.compareTo(endHash) <= 0;
-        } else {
-            return keyHash.compareTo(startHash) > 0 || keyHash.compareTo(endHash) <= 0;
-        }
-    }
-
-    // Méthode pour corriger les Finger Tables en vérifiant aléatoirement
+    // Méthode fixFingers
     public void fixFingers() throws IOException {
-        int i = new Random().nextInt(fingerTable.getM() - 1) + 1;
-        this.updateFingerTable(this,i);
-    }
-
-    public void updateFingerTable(ChordNode node ,int i) {
-        if (isInInterval(this.nodeId, this.nodeId, fingerTable.getFingers().get(i).getNodeId())) {
-            fingerTable.getFingers().set(i, fingerTable.getFingers().get(i));
-            ChordNode p = this.predecessor;
-            if (p != null) {
-                p.updateFingerTable(node, i);
-            }
-        }
-    }
-
-    // Mise à jour des Finger Tables des autres nœuds affectés
-    public void updateOthers() throws IOException {
-        for (int i = 0; i < this.fingerTable.getM(); i++) {
-            ChordNode p = findPredecessor(new BigInteger(this.nodeId).subtract(BigInteger.valueOf((long) Math.pow(2, i))).toString());
-            p.updateFingerTable(this, i);
-        }
+        int i = new Random().nextInt(m - 1) + 1;
+        String start = fingerTable.calculateFingerStart(i);
+        NodeHeader successorNode = findSuccessor(start);
+        fingerTable.getFingers().set(i, successorNode);
     }
 }
-

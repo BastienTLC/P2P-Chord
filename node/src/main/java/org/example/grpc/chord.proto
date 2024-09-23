@@ -5,42 +5,36 @@ option java_package = "com.example.grpc.chord";
 option java_outer_classname = "ChordProto";
 
 service Chord {
-
-  //--- common chord calls
-  rpc successor (SuccessorRequest)  returns (SuccessorResponse) {}
-  rpc join      (JoinRequest)       returns (JoinResponse) {}
-  rpc stabilize (StabilizeRequest)  returns (StabilizeResponse) {}
-  rpc notify    (NotifyRequest)     returns (NotifyResponse) {}
-  rpc leave     (LeaveRequest)      returns (LeaveResponse) {}
-  rpc ping      (PingRequest)       returns (PingResponse) {}
+  // Common Chord RPC calls
+  rpc join (JoinRequest) returns (JoinResponse);
+  rpc findSuccessor (NodeInfo) returns (NodeInfo);
+  rpc stabilize (StabilizeRequest) returns (StabilizeResponse);
+  rpc notify (NotifyRequest) returns (NotifyResponse);
+  rpc leave (LeaveRequest) returns (LeaveResponse);
+  rpc ping (PingRequest) returns (PingResponse);
+  rpc getPredecessor (NodeInfo) returns (NodeInfo);
+  rpc setPredecessor (NodeInfo) returns (google.protobuf.Empty);
+  rpc getSuccessor (NodeInfo) returns (NodeInfo);
+  rpc setSuccessor (NodeInfo) returns (google.protobuf.Empty);
+  rpc updateFingerTable (UpdateFingerTableRequest) returns (google.protobuf.Empty);
+  rpc getNodeInfo (GetNodeInfoRequest) returns (GetNodeInfoResponse);
 }
 
 message NodeInfo {
-  string id = 1;          // Unique identifier (e.g., hash of the IP or node id)
-  string ip = 2;          // IP address of the node
-  int32 port = 3;         // Port where the node is listening
+  string id = 1;    // Unique identifier (e.g., hash of the IP or node id)
+  string ip = 2;    // IP address of the node
+  int32 port = 3;   // Port where the node is listening
 }
 
-// Request and Response for successor RPC call
-message SuccessorRequest {
-  string key_id = 1;      // ID of the key to find the successor for
-}
-
-message SuccessorResponse {
-  NodeInfo node = 1;      // The node responsible for the given key
-}
-
-// Request and Response for join RPC call
 message JoinRequest {
   NodeInfo new_node = 1;  // Node that wants to join the network
 }
 
 message JoinResponse {
-  bool success = 1;       // Whether the join operation succeeded
-  NodeInfo successor = 2; // Successor node of the new node
+  bool success = 1;        // Whether the join operation succeeded
+  NodeInfo successor = 2;  // Successor node of the new node
 }
 
-// Request and Response for stabilize RPC call
 message StabilizeRequest {
   NodeInfo caller = 1;    // The node calling stabilize
 }
@@ -49,7 +43,6 @@ message StabilizeResponse {
   bool success = 1;       // Whether stabilization succeeded
 }
 
-// Request and Response for notify RPC call
 message NotifyRequest {
   NodeInfo caller = 1;    // The node notifying its successor
 }
@@ -58,7 +51,6 @@ message NotifyResponse {
   bool success = 1;       // Whether the notify succeeded
 }
 
-// Request and Response for leave RPC call
 message LeaveRequest {
   NodeInfo leaving_node = 1;  // The node leaving the Chord ring
 }
@@ -67,7 +59,6 @@ message LeaveResponse {
   bool success = 1;       // Whether the leave operation was successful
 }
 
-// Request and Response for ping RPC call
 message PingRequest {
   NodeInfo node = 1;      // The node that is pinging to check health
 }
@@ -76,7 +67,18 @@ message PingResponse {
   bool alive = 1;         // Whether the node is alive
 }
 
-// Example message structure to store/retrieve data in the DHT
+message UpdateFingerTableRequest {
+  NodeInfo s = 1;
+  int32 i = 2;
+}
+
+message GetNodeInfoRequest {
+}
+
+message GetNodeInfoResponse {
+  NodeInfo node = 1;
+}
+
 message Message {
   string id = 1;          // Unique message identifier
   int64 timestamp = 2;    // Timestamp of message creation
