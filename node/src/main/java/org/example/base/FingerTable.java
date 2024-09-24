@@ -33,6 +33,7 @@ public class FingerTable {
 
         successorClient.setPredecessor(localNode);
 
+
         // Étape 3 : Initialiser les autres entrées de la Finger Table
         for (int i = 1; i < m; i++) {
             String start = calculateFingerStart(i);
@@ -43,6 +44,7 @@ public class FingerTable {
                 fingers.set(i, successorNodeI);
             }
         }
+        successorClient.shutdown();
     }
 
     // Méthode pour calculer le début de la plage de la i-ème entrée

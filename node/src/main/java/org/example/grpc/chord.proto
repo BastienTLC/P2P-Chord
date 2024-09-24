@@ -18,6 +18,14 @@ service Chord {
   rpc setSuccessor (NodeInfo) returns (google.protobuf.Empty);
   rpc updateFingerTable (UpdateFingerTableRequest) returns (google.protobuf.Empty);
   rpc getNodeInfo (GetNodeInfoRequest) returns (GetNodeInfoResponse);
+
+
+  rpc sendMessage (Message) returns (google.protobuf.Empty);
+  rpc getMessage (Message) returns (Message);
+  rpc getChordNodeInfo (google.protobuf.Empty) returns (Node);
+
+
+
 }
 
 message NodeInfo {
@@ -77,6 +85,25 @@ message GetNodeInfoRequest {
 
 message GetNodeInfoResponse {
   NodeInfo node = 1;
+}
+
+message Node {
+  string ip = 1;
+  int32 port = 2;
+  string id = 3;
+  NodeInfo predecessor = 4;
+  NodeInfo successor = 5;
+  FingerTable fingerTable = 6;
+  int32 m = 7;
+  MessageStore messageStore = 8;
+}
+
+message FingerTable {
+  repeated NodeInfo finger = 1;
+}
+
+message MessageStore {
+  repeated Message messages = 1;
 }
 
 message Message {

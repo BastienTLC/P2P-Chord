@@ -9,12 +9,17 @@ import org.example.types.NodeHeader;
 
 public class ChordClient {
     private final ChordGrpc.ChordBlockingStub blockingStub;
+    private final ManagedChannel channel;
 
     public ChordClient(String ip, int port) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(ip, port)
+        channel = ManagedChannelBuilder.forAddress(ip, port)
                 .usePlaintext()
                 .build();
         blockingStub = ChordGrpc.newBlockingStub(channel);
+    }
+
+    public void shutdown() {
+        channel.shutdown();
     }
 
     public NodeHeader findSuccessor(String keyId) {

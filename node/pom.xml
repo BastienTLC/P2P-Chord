@@ -73,7 +73,7 @@
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version> <!-- Version compatible avec Java 9 et plus -->
+            <version>1.3.2</version>
         </dependency>
     </dependencies>
 

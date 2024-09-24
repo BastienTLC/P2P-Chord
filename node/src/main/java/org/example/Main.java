@@ -4,6 +4,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import org.example.base.ChordNode;
 import org.example.base.ChordServiceImpl;
+import org.example.base.ScheduledTask;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +42,7 @@ public class Main {
 
         // Création du nœud Chord
         ChordNode node = new ChordNode(host, port);
+        ScheduledTask scheduledTask = new ScheduledTask(node);
 
         // Lancement du service gRPC
         ChordServiceImpl service = new ChordServiceImpl(node);
@@ -62,6 +64,10 @@ public class Main {
             node.join(null, -1);
             System.out.println("Premier nœud du réseau initialisé.");
         }
+
+        scheduledTask.startScheduledTask();
+
+
 
         // Garder le serveur en marche
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

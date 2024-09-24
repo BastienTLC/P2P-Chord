@@ -17,6 +17,7 @@ public class ChordNode {
     private final FingerTable fingerTable; // La table de doigts pour le routage
     private final int m = 5; // Nombre de bits pour l'espace d'identifiants
     private NodeHeader currentHeader;
+    private MessageStore messageStore;
 
     public ChordNode(String ip, int port) throws NoSuchAlgorithmException {
         this.ip = ip;
@@ -24,6 +25,7 @@ public class ChordNode {
         this.nodeId = hashNode(ip + ":" + port);
         this.fingerTable = new FingerTable(this);
         this.currentHeader = new NodeHeader(ip, port, nodeId);
+        this.messageStore = new MessageStore();
     }
 
     // Fonction pour hacher l'ID du nœud basé sur son IP et son port
@@ -44,6 +46,7 @@ public class ChordNode {
     public NodeHeader getPredecessor() { return this.predecessor; }
     public void setPredecessor(NodeHeader predecessor) { this.predecessor = predecessor; }
     public FingerTable getFingerTable() { return this.fingerTable; }
+    public MessageStore getMessageStore() { return this.messageStore; }
 
     // Méthode join
     public void join(String existingNodeIp, int existingNodePort) throws IOException {
@@ -51,6 +54,7 @@ public class ChordNode {
             ChordClient chordClient = new ChordClient(existingNodeIp, existingNodePort);
             fingerTable.initFingerTable(chordClient);
             this.updateOthers();
+            chordClient.shutdown();
             // Déplacer les clés appropriées du successeur si nécessaire
         } else {
             // Premier nœud dans le réseau
@@ -64,16 +68,12 @@ public class ChordNode {
 
     // Méthode updateOthers
     public void updateOthers() throws IOException {
-        BigInteger twoPowerM = BigInteger.valueOf(2).pow(m);
-        for (int i = 0; i < m; i++) {
-            BigInteger offset = BigInteger.valueOf(2).pow(i);
-            BigInteger id = new BigInteger(this.nodeId).subtract(offset).mod(twoPowerM);
-            String idStr = id.toString();
-            NodeHeader p = findPredecessor(idStr);
-            if (p != null) {
-                ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
-                pClient.updateFingerTable(currentHeader, i);
-            }
+        for (int i = 0; i < m - 1; i++) {
+            String start = fingerTable.calculateFingerStart(i);
+            NodeHeader p = this.findPredecessor(start);
+            ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
+            pClient.updateFingerTable(currentHeader, i);
+            pClient.shutdown();
         }
     }
 
@@ -86,32 +86,35 @@ public class ChordNode {
             if (p != null) {
                 ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
                 pClient.updateFingerTable(s, i);
+                pClient.shutdown();
             }
         }
     }
 
     // Méthode findSuccessor
-    public NodeHeader findSuccessor(String id) throws IOException {
+    public NodeHeader findSuccessor(String id)  {
         NodeHeader n0 = this.findPredecessor(id);
-        if (n0.equals(this)) {
+        if (n0.getNodeId().equals(this.nodeId)) {
             return this.successor;
         } else {
             ChordClient n0Client = new ChordClient(n0.getIp(), Integer.parseInt(n0.getPort()));
+            n0Client.shutdown();
             return n0Client.getSuccessor();
         }
     }
 
     // Méthode findPredecessor
-    public NodeHeader findPredecessor(String id) throws IOException {
+    public NodeHeader findPredecessor(String id) {
         ChordNode n0 = this;
         NodeHeader n0Predecessor = this.predecessor;
         while (!isInIntervalOpenClosed(id, n0.getNodeId(), n0.getSuccessor().getNodeId())) {
             NodeHeader closestFinger = n0.closestPrecedingFinger(id);
-            if (closestFinger.equals(n0)) {
+            if (closestFinger.getNodeId().equals(n0.getNodeId())) {
                 break;
             }
             ChordClient fingerClient = new ChordClient(closestFinger.getIp(), Integer.parseInt(closestFinger.getPort()));
             n0Predecessor = fingerClient.getNodeInfo();
+            fingerClient.shutdown();
         }
         return n0Predecessor;
     }
@@ -162,6 +165,7 @@ public class ChordNode {
             this.successor = x;
         }
         successorClient.notify(this);
+        successorClient.shutdown();
     }
 
     // Méthode notify

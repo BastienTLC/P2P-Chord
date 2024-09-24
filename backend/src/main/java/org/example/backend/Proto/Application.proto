@@ -1,0 +1,47 @@
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+option java_package = "com.example.grpc.application";
+option java_outer_classname = "ApplicationProto";
+
+
+service Application {
+  rpc sendMessage (Message) returns (google.protobuf.Empty);
+  rpc getMessage (Message) returns (Message);
+  rpc getChordNodeInfo (google.protobuf.Empty) returns (Node);
+}
+
+message Node {
+  string ip = 1;
+  int32 port = 2;
+  string id = 3;
+  NodeInfo predecessor = 4;
+  NodeInfo successor = 5;
+  FingerTable fingerTable = 6;
+  int32 m = 7;
+  MessageStore messageStore = 8;
+}
+
+message NodeInfo {
+  string id = 1;
+  string ip = 2;
+  int32 port = 3;
+}
+
+message FingerTable {
+  repeated NodeInfo finger = 1;
+}
+
+message MessageStore {
+  repeated Message messages = 1;
+}
+
+message Message {
+  string id = 1;          // Unique message identifier
+  int64 timestamp = 2;    // Timestamp of message creation
+  string author = 3;      // Message author username
+  string topic = 4;       // Message topic identifier
+  string content = 5;     // Optional content of the message
+  bytes data = 6;         // Optional data payload
+}
