@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+option java_package = "com.example.grpc.chord";
+option java_outer_classname = "ChordProto";
+
+service Chord {
+  // Common Chord RPC calls
+  rpc join (JoinRequest) returns (JoinResponse);
+  rpc findSuccessor (NodeInfo) returns (NodeInfo);
+  rpc stabilize (StabilizeRequest) returns (StabilizeResponse);
+  rpc notify (NotifyRequest) returns (NotifyResponse);
+  rpc leave (LeaveRequest) returns (LeaveResponse);
+  rpc ping (PingRequest) returns (PingResponse);
+  rpc getPredecessor (NodeInfo) returns (NodeInfo);
+  rpc setPredecessor (NodeInfo) returns (google.protobuf.Empty);
+  rpc getSuccessor (NodeInfo) returns (NodeInfo);
+  rpc setSuccessor (NodeInfo) returns (google.protobuf.Empty);
+  rpc updateFingerTable (UpdateFingerTableRequest) returns (google.protobuf.Empty);
+  rpc getNodeInfo (GetNodeInfoRequest) returns (GetNodeInfoResponse);
+
+
+  rpc sendMessage (Message) returns (google.protobuf.Empty);
+  rpc getMessage (Message) returns (Message);
+  rpc getChordNodeInfo (google.protobuf.Empty) returns (Node);
+
+
+
+}
+
+message NodeInfo {
+  string id = 1;    // Unique identifier (e.g., hash of the IP or node id)
+  string ip = 2;    // IP address of the node
+  int32 port = 3;   // Port where the node is listening
+}
+
+message JoinRequest {
+  NodeInfo new_node = 1;  // Node that wants to join the network
+}
+
+message JoinResponse {
+  bool success = 1;        // Whether the join operation succeeded
+  NodeInfo successor = 2;  // Successor node of the new node
+}
+
+message StabilizeRequest {
+  NodeInfo caller = 1;    // The node calling stabilize
+}
+
+message StabilizeResponse {
+  bool success = 1;       // Whether stabilization succeeded
+}
+
+message NotifyRequest {
+  NodeInfo caller = 1;    // The node notifying its successor
+}
+
+message NotifyResponse {
+  bool success = 1;       // Whether the notify succeeded
+}
+
+message LeaveRequest {
+  NodeInfo leaving_node = 1;  // The node leaving the Chord ring
+}
+
+message LeaveResponse {
+  bool success = 1;       // Whether the leave operation was successful
+}
+
+message PingRequest {
+  NodeInfo node = 1;      // The node that is pinging to check health
+}
+
+message PingResponse {
+  bool alive = 1;         // Whether the node is alive
+}
+
+message UpdateFingerTableRequest {
+  NodeInfo s = 1;
+  int32 i = 2;
+}
+
+message GetNodeInfoRequest {
+}
+
+message GetNodeInfoResponse {
+  NodeInfo node = 1;
+}
+
+message Node {
+  string ip = 1;
+  int32 port = 2;
+  string id = 3;
+  NodeInfo predecessor = 4;
+  NodeInfo successor = 5;
+  FingerTable fingerTable = 6;
+  int32 m = 7;
+  MessageStore messageStore = 8;
+}
+
+message FingerTable {
+  repeated NodeInfo finger = 1;
+}
+
+message MessageStore {
+  repeated Message messages = 1;
+}
+
+message Message {
+  string id = 1;          // Unique message identifier
+  int64 timestamp = 2;    // Timestamp of message creation
+  string author = 3;      // Message author username
+  string topic = 4;       // Message topic identifier
+  string content = 5;     // Optional content of the message
+  bytes data = 6;         // Optional data payload
+}

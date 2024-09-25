@@ -2,8 +2,6 @@ package org.example.backend.Entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Map;
-
 public class Node {
     @JsonProperty("ip")
     private String ip;
@@ -37,6 +35,70 @@ public class Node {
         this.successor = successor;
         this.fingerTable = fingerTable;
         this.m = m;
+        this.messageStore = messageStore;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public NodeHeader getPredecessor() {
+        return predecessor;
+    }
+
+    public void setPredecessor(NodeHeader predecessor) {
+        this.predecessor = predecessor;
+    }
+
+    public NodeHeader getSuccessor() {
+        return successor;
+    }
+
+    public void setSuccessor(NodeHeader successor) {
+        this.successor = successor;
+    }
+
+    public FingerTable getFingerTable() {
+        return fingerTable;
+    }
+
+    public void setFingerTable(FingerTable fingerTable) {
+        this.fingerTable = fingerTable;
+    }
+
+    public int getM() {
+        return m;
+    }
+
+    public void setM(int m) {
+        this.m = m;
+    }
+
+    public Message[] getMessageStore() {
+        return messageStore;
+    }
+
+    public void setMessageStore(Message[] messageStore) {
         this.messageStore = messageStore;
     }
 }
