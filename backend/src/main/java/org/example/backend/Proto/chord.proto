@@ -12,16 +12,20 @@ service Chord {
   rpc notify (NotifyRequest) returns (NotifyResponse);
   rpc leave (LeaveRequest) returns (LeaveResponse);
   rpc ping (PingRequest) returns (PingResponse);
-  rpc getPredecessor (NodeInfo) returns (NodeInfo);
+  rpc getPredecessor (google.protobuf.Empty) returns (NodeInfo);
+  rpc getSuccessor (google.protobuf.Empty) returns (NodeInfo);
   rpc setPredecessor (NodeInfo) returns (google.protobuf.Empty);
-  rpc getSuccessor (NodeInfo) returns (NodeInfo);
   rpc setSuccessor (NodeInfo) returns (google.protobuf.Empty);
-  rpc updateFingerTable (UpdateFingerTableRequest) returns (google.protobuf.Empty);
+  rpc closestPrecedingFinger (ClosestRequest) returns (NodeInfo) {}
+  rpc updateFingerTable(UpdateFingerTableRequest) returns (google.protobuf.Empty);
   rpc getNodeInfo (GetNodeInfoRequest) returns (GetNodeInfoResponse);
+  rpc storeMessage (StoreMessageRequest) returns (StoreMessageResponse);
+  rpc retrieveMessage (RetrieveMessageRequest) returns (RetrieveMessageResponse);
 
 
-  rpc sendMessage (Message) returns (google.protobuf.Empty);
-  rpc getMessage (Message) returns (Message);
+
+  rpc StoreMessageInChord (StoreMessageRequest) returns (StoreMessageResponse);
+  rpc RetrieveMessageFromChord (RetrieveMessageRequest) returns (RetrieveMessageResponse);
   rpc getChordNodeInfo (google.protobuf.Empty) returns (Node);
 
 
@@ -85,6 +89,28 @@ message GetNodeInfoRequest {
 
 message GetNodeInfoResponse {
   NodeInfo node = 1;
+}
+
+message ClosestRequest {
+  string id = 1;
+}
+
+message StoreMessageRequest {
+  string key = 1;
+  Message message = 2;
+}
+
+message StoreMessageResponse {
+  bool success = 1;
+}
+
+message RetrieveMessageRequest {
+  string key = 1;
+}
+
+message RetrieveMessageResponse {
+  bool found = 1;
+  Message message = 2;
 }
 
 message Node {

@@ -1,8 +1,10 @@
 package org.example.backend.Controller;
 
+import org.example.backend.Entity.Message;
 import org.example.backend.Entity.Node;
 import org.example.backend.Entity.NodeHeader;
 import org.example.backend.Services.NodeServices;
+import org.example.backend.Utils.Hash;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -12,8 +14,44 @@ import java.util.Map;
 @RequestMapping("/network")
 public class ChordController {
 
-    private final String initialHost = "localhost";  // Initial node IP
-    private final int initialPort = 8000;            // Initial node port
+    private String initialHost = "localhost";  // Initial node IP
+    private int initialPort = 8000;            // Initial node port
+
+
+    @PostMapping("/store/{host}/{port}")
+    public boolean storeMessageInChord(@PathVariable String host, @PathVariable int port,@RequestBody Message message) {
+        NodeServices nodeServices = new NodeServices(host, port);
+        String key = Hash.hashKey(message.getAuthor() +":"+ message.getTimestamp());
+        message.setId(key);
+        return nodeServices.storeMessageInChord(key, message);
+    }
+
+    @PostMapping("/store")
+    public boolean storeMessageInChord(@RequestBody Message message) {
+        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+        String key = Hash.hashKey(message.getAuthor() +":"+ message.getTimestamp());
+        message.setId(key);
+        return nodeServices.storeMessageInChord(Hash.hashKey(message.getAuthor() +":"+ message.getTimestamp()), message);
+    }
+
+
+    @GetMapping("/retrieve/{key}")
+    public Message retrieveMessageFromChord(@PathVariable String key) {
+        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+        return nodeServices.retrieveMessageFromChord(Hash.hashKey(key));
+    }
+
+    @PostMapping("/initialNode/{host}/{port}")
+    public boolean setInitialNode(@PathVariable String host, @PathVariable int port) {
+        NodeServices nodeServices = new NodeServices(host, port);
+        Node initialNode = nodeServices.getChordNodeInfo();
+        if (initialNode != null) {
+            initialHost = host;
+            initialPort = port;
+            return true;
+        }
+        return false;
+    }
 
     // Endpoint to get the network ring data with limited recursion depth
     @GetMapping("/ring/{depth}")

@@ -1,6 +1,7 @@
 package org.example.base;
 
 import com.example.grpc.chord.*;
+import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -34,28 +35,21 @@ public class ChordClient {
         }
     }
 
-    public NodeHeader getPredecessor(NodeHeader node) {
-        NodeInfo request = NodeInfo.newBuilder()
-                .setId(node.getNodeId())
-                .setIp(node.getIp())
-                .setPort(Integer.parseInt(node.getPort()))
-                .build();
-
+    public NodeHeader getPredecessor() {
         try {
-            NodeInfo nodeInfo = blockingStub.getPredecessor(request);
+            NodeInfo nodeInfo = blockingStub.getPredecessor(Empty.getDefaultInstance());
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
             e.printStackTrace();
             return null;
         }
-
     }
 
-    public void setPredecessor(ChordNode node) {
+    public void setPredecessor(NodeHeader node) {
         NodeInfo nodeInfo = NodeInfo.newBuilder()
                 .setId(node.getNodeId())
                 .setIp(node.getIp())
-                .setPort(node.getPort())
+                .setPort(Integer.parseInt(node.getPort()))
                 .build();
         try {
             blockingStub.setPredecessor(nodeInfo);
@@ -65,10 +59,8 @@ public class ChordClient {
     }
 
     public NodeHeader getSuccessor() {
-        NodeInfo request = NodeInfo.newBuilder().build();
-
         try {
-            NodeInfo nodeInfo = blockingStub.getSuccessor(request);
+            NodeInfo nodeInfo = blockingStub.getSuccessor(Empty.getDefaultInstance());
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
             e.printStackTrace();
@@ -91,11 +83,11 @@ public class ChordClient {
 
 
 
-    public void notify(ChordNode node) {
+    public void notify(NodeHeader node) {
         NodeInfo nodeInfo = NodeInfo.newBuilder()
                 .setId(node.getNodeId())
                 .setIp(node.getIp())
-                .setPort(node.getPort())
+                .setPort(Integer.parseInt(node.getPort()))
                 .build();
 
         NotifyRequest request = NotifyRequest.newBuilder()
@@ -127,6 +119,53 @@ public class ChordClient {
             e.printStackTrace();
         }
     }
+
+    public NodeHeader closestPrecedingFinger(String id) {
+        ClosestRequest request = ClosestRequest.newBuilder().setId(id).build();
+        try {
+            NodeInfo nodeInfo = blockingStub.closestPrecedingFinger(request);
+            return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
+        } catch (StatusRuntimeException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+
+    public boolean storeMessage(String key, Message message) {
+        StoreMessageRequest request = StoreMessageRequest.newBuilder()
+                .setKey(key)
+                .setMessage(message)
+                .build();
+        try {
+            StoreMessageResponse response = blockingStub.storeMessage(request);
+            return response.getSuccess();
+        } catch (StatusRuntimeException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
+    public Message retrieveMessage(String key) {
+        RetrieveMessageRequest request = RetrieveMessageRequest.newBuilder()
+                .setKey(key)
+                .build();
+        try {
+            RetrieveMessageResponse response = blockingStub.retrieveMessage(request);
+            if (response.getFound()) {
+                return response.getMessage();
+            } else {
+                return null;
+            }
+        } catch (StatusRuntimeException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     public NodeHeader getNodeInfo() {
         GetNodeInfoRequest request = GetNodeInfoRequest.newBuilder().build();

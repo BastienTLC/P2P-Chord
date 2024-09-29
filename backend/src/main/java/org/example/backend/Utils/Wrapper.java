@@ -19,7 +19,7 @@ public class Wrapper {
                 wrapGrpcNodeInfoToNodeHeader(grpcNode.getSuccessor()),
                 wrapGrpcFingerTableToNodeHeaderList(grpcNode.getFingerTable()),
                 grpcNode.getM(),
-                wrapGrpcMessageToMessage(grpcNode.getMessageStore())
+                wrapGrpcMessagesToMessages(grpcNode.getMessageStore())
         );
     }
 
@@ -43,7 +43,7 @@ public class Wrapper {
         );
     }
 
-    public static Message[] wrapGrpcMessageToMessage(ChordProto.MessageStore grpcMessages) {
+    public static Message[] wrapGrpcMessagesToMessages(ChordProto.MessageStore grpcMessages) {
         return grpcMessages.getMessagesList().stream()
                 .map(message -> new Message(
                         message.getId(),
@@ -54,5 +54,40 @@ public class Wrapper {
                         message.getData().toByteArray()
                 ))
                 .toArray(Message[]::new);
+    }
+
+    public static ChordProto.MessageStore wrapMessagesToGrpcMessages(Message message) {
+        return ChordProto.MessageStore.newBuilder()
+                .addMessages(ChordProto.Message.newBuilder()
+                        .setId(message.getId())
+                        .setTimestamp(message.getTimestamp())
+                        .setAuthor(message.getAuthor())
+                        .setTopic(message.getTopic())
+                        .setContent(message.getContent())
+                        .setData(com.google.protobuf.ByteString.copyFrom(message.getData()))
+                        .build())
+                .build();
+    }
+
+    public static Message wrapGrpcMessageToMessage(ChordProto.Message grpcMessage) {
+        return new Message(
+                grpcMessage.getId(),
+                grpcMessage.getTimestamp(),
+                grpcMessage.getAuthor(),
+                grpcMessage.getTopic(),
+                grpcMessage.getContent(),
+                grpcMessage.getData().toByteArray()
+        );
+    }
+
+    public static ChordProto.Message wrapMessageToGrpcMessage(Message message) {
+        return ChordProto.Message.newBuilder()
+                .setId(message.getId())
+                .setTimestamp(message.getTimestamp())
+                .setAuthor(message.getAuthor())
+                .setTopic(message.getTopic())
+                .setContent(message.getContent())
+                .setData(com.google.protobuf.ByteString.copyFrom(message.getData()))
+                .build();
     }
 }

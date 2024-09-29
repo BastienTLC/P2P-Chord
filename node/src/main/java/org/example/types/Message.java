@@ -8,6 +8,15 @@ public class Message {
     private String content;
     private byte[] data;
 
+    public Message(String id, long timestamp, String author, String topic, String content, byte[] data) {
+        this.id = id;
+        this.timestamp = timestamp;
+        this.author = author;
+        this.topic = topic;
+        this.content = content;
+        this.data = data;
+    }
+
     // Getters and setters for each field
     public String getId() {
         return id;
