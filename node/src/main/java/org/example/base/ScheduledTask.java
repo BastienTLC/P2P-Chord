@@ -23,4 +23,8 @@ public class ScheduledTask {
             }
         }, 0, 5, TimeUnit.SECONDS);
     }
+
+    public void stopScheduledTask() {
+        scheduler.shutdown();
+    }
 }

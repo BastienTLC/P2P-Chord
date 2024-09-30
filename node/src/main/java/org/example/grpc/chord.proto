@@ -10,7 +10,7 @@ service Chord {
   rpc findSuccessor (NodeInfo) returns (NodeInfo);
   rpc stabilize (StabilizeRequest) returns (StabilizeResponse);
   rpc notify (NotifyRequest) returns (NotifyResponse);
-  rpc leave (LeaveRequest) returns (LeaveResponse);
+  rpc leave (google.protobuf.Empty) returns (LeaveResponse);
   rpc ping (PingRequest) returns (PingResponse);
   rpc getPredecessor (google.protobuf.Empty) returns (NodeInfo);
   rpc getSuccessor (google.protobuf.Empty) returns (NodeInfo);
@@ -61,10 +61,6 @@ message NotifyRequest {
 
 message NotifyResponse {
   bool success = 1;       // Whether the notify succeeded
-}
-
-message LeaveRequest {
-  NodeInfo leaving_node = 1;  // The node leaving the Chord ring
 }
 
 message LeaveResponse {

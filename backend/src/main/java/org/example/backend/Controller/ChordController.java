@@ -12,6 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/network")
+@CrossOrigin(origins = "*")
 public class ChordController {
 
     private String initialHost = "localhost";  // Initial node IP
@@ -53,6 +54,20 @@ public class ChordController {
         return false;
     }
 
+    @PatchMapping("/run/{nbNodes}")
+    public boolean runNodes(@PathVariable int nbNodes) {
+        int lastPort = getNetworkRing(100).values().stream()
+                .mapToInt(Node::getPort)
+                .max()
+                .orElse(8000);
+
+        for (int i = lastPort + 1; i <= lastPort + nbNodes; i++) {
+            NodeServices nodeServices = new NodeServices("localhost", i);
+            nodeServices.runNode("localhost", i, initialHost, initialPort);
+        }
+        return true;
+    }
+
     // Endpoint to get the network ring data with limited recursion depth
     @GetMapping("/ring/{depth}")
     public Map<String, Node> getNetworkRing(@PathVariable int depth) {
@@ -89,4 +104,10 @@ public class ChordController {
             traverseNetworkRing(successorNode, depth - 1, nodeMap);
         }
     }
+
+    public boolean chordIsReady(int numberOfNodes) {
+        Map<String, Node> networkRing = getNetworkRing(100);
+        return networkRing.size() >= numberOfNodes;
+    }
+
 }

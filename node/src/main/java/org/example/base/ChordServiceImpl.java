@@ -237,6 +237,14 @@ public class ChordServiceImpl extends ChordImplBase {
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void leave(com.google.protobuf.Empty request, StreamObserver<LeaveResponse> responseObserver) {
+        //chordNode.leave();
+        responseObserver.onNext(LeaveResponse.newBuilder().setSuccess(true).build());
+        responseObserver.onCompleted();
+        System.exit(0);
+    }
+
 
 
 

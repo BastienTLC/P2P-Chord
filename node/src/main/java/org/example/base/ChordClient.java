@@ -13,7 +13,8 @@ public class ChordClient {
     private final ManagedChannel channel;
 
     public ChordClient(String ip, int port) {
-        channel = ManagedChannelBuilder.forAddress(ip, port)
+        String target = ip + ":" + port;
+        channel = ManagedChannelBuilder.forTarget(target)
                 .usePlaintext()
                 .build();
         blockingStub = ChordGrpc.newBlockingStub(channel);
@@ -68,11 +69,11 @@ public class ChordClient {
         }
     }
 
-    public void setSuccessor(ChordNode node) {
+    public void setSuccessor(NodeHeader node) {
         NodeInfo nodeInfo = NodeInfo.newBuilder()
                 .setId(node.getNodeId())
                 .setIp(node.getIp())
-                .setPort(node.getPort())
+                .setPort(Integer.parseInt(node.getPort()))
                 .build();
         try {
             blockingStub.setSuccessor(nodeInfo);

@@ -17,7 +17,7 @@ public class ChordNode {
     private NodeHeader successor; // Le successeur de ce nœud
     private NodeHeader predecessor; // Le prédécesseur de ce nœud
     private final FingerTable fingerTable; // La table de doigts pour le routage
-    private final int m = 3; // Nombre de bits pour l'espace d'identifiants
+    private final int m = 8; // Nombre de bits pour l'espace d'identifiants
     private NodeHeader currentHeader;
     private MessageStore messageStore;
 
@@ -56,7 +56,7 @@ public class ChordNode {
     public MessageStore getMessageStore() { return this.messageStore; }
 
     // Méthode join
-    public void join(String existingNodeIp, int existingNodePort) throws IOException {
+    public void join(String existingNodeIp, int existingNodePort) {
         System.out.println("[" + this.nodeId + "] - Rejoindre le réseau via le nœud : " + existingNodeIp + ":" + existingNodePort);
 
         if (existingNodeIp != null) {
@@ -80,9 +80,30 @@ public class ChordNode {
         printNodeState();
     }
 
+    public void leave(){
+        //dernier noeud dans le reseau
+        if(this.predecessor.equals(this.currentHeader) && this.successor.equals(this.currentHeader)){
+            System.out.println("[" + this.nodeId + "] - Dernier noeud dans le reseau. Fermeture du reseau.");
+        }
+        else{
+            //transfert des clés
+            System.out.println("[" + this.nodeId + "] - Transfert des clés");
+            ChordClient predecessorClient = new ChordClient(predecessor.getIp(), Integer.parseInt(predecessor.getPort()));
+            ChordClient successorClient = new ChordClient(successor.getIp(), Integer.parseInt(successor.getPort()));
+            predecessorClient.setSuccessor(successor);
+            successorClient.setPredecessor(predecessor);
+            this.successor = null;
+            this.predecessor = null;
+            this.updateOthers();
+            predecessorClient.shutdown();
+            successorClient.shutdown();
+        }
+
+    }
+
 
     // Méthode updateOthers
-    public void updateOthers() throws IOException {
+    public void updateOthers() {
         BigInteger mod = BigInteger.valueOf(2).pow(m);
         BigInteger nodeIdInt = new BigInteger(this.nodeId);
 
@@ -104,9 +125,9 @@ public class ChordNode {
     // Méthode updateFingerTable
     public void updateFingerTable(NodeHeader s, int i) {
         System.out.println("[" + this.nodeId + "] - updateFingerTable appelé avec s = " + s.getNodeId() + ", i = " + i);
-        NodeHeader currentFinger = fingerTable.getFingers().get(i - 1);
+        NodeHeader currentFinger = fingerTable.getFingers().get(i);
         if (currentFinger == null || isInIntervalClosedOpen(s.getNodeId(), this.nodeId, currentFinger.getNodeId())) {
-            fingerTable.getFingers().set(i - 1, s);
+            fingerTable.getFingers().set(i, s);
             System.out.println("[" + this.nodeId + "] - finger[" + (i - 1) + "] mis à jour avec " + s.getNodeId());
             NodeHeader p = this.predecessor;
             if (p != null && !p.equals(this.currentHeader)) {
@@ -235,7 +256,7 @@ public class ChordNode {
         fingerTable.getFingers().set(i, successorNode);
     }
 
-    public void initFingerTable(ChordClient n0Client) throws IOException {
+    public void initFingerTable(ChordClient n0Client) {
         System.out.println("[" + this.nodeId + "] - Initialisation de la table de doigts.");
         // Étape 1 : Initialiser finger[0]
         String start0 = fingerTable.calculateFingerStart(0);
@@ -266,6 +287,7 @@ public class ChordNode {
             }
         }
     }
+
 
     public void storeMessageInChord(String key, Message message)  {
         // Calculer le hachage de la clé

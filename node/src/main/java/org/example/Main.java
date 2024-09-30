@@ -72,6 +72,8 @@ public class Main {
         // Garder le serveur en marche
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Arrêt du serveur gRPC...");
+            scheduledTask.stopScheduledTask();
+            node.leave();
             server.shutdown();
         }));
 
