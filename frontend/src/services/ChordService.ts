@@ -63,3 +63,30 @@ export const stopNode = async (host: string, port: number): Promise<boolean> => 
         return false;
     }
 };
+
+export const startTest = async (nbNodes : number, nbMessages: number, dataSize: number, multiThreading: boolean) => {
+    try {
+        const response = await apiClient.get('/measurements/runTest', {
+            params: {
+                nbNodes,
+                nbMessages,
+                dataSize,
+                multiThreading,
+            },
+        });
+        return response.data;
+    }catch (error) {
+        console.error('Error running test:', error);
+        return null;
+    }
+}
+
+    export const setInitialNodes = async (host: string, port: number): Promise<boolean> => {
+        try {
+            const response = await apiClient.patch<boolean>(`/network/setInitialNodes/${host}/${port}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error setting initial nodes:', error);
+            return false;
+        }
+    }

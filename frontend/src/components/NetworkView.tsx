@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Node } from '../models/Node';
-import { getNetworkRing, runNodes, stopNode } from '../services/ChordService';
+import {getNetworkRing, runNodes, setInitialNodes, stopNode} from '../services/ChordService';
 import { useChordStore } from '../store/store';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -34,6 +34,7 @@ const NetworkView: React.FC = () => {
 
     const onRowSelect = (event: any) => {
         setSelectedNode(event.data);
+        setInitialNodes(event.data.ip, event.data.port);
     };
 
     const handleRunNodes = async () => {

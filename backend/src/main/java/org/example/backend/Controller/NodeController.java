@@ -20,7 +20,7 @@ public class NodeController {
     @PatchMapping("/run/{host}/{port}")
     public boolean runNode(@PathVariable String host, @PathVariable int port) {
         NodeServices nodeServices = new NodeServices(host, port);
-        return nodeServices.runNode(host, port, "localhost", 8000);
+        return nodeServices.runNode(host, port, "localhost", 8000, false);
     }
 
     @PatchMapping("/stop/{host}/{port}")

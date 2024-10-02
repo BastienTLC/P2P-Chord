@@ -11,40 +11,60 @@ import java.security.NoSuchAlgorithmException;
 
 public class Main {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
-        // Valeurs par défaut
+        // Default values
         String host = "localhost";
         int port = 50051;
         String existingNodeIp = null;
         int existingNodePort = -1;
+        boolean multiThreadingEnabled = false;
 
-        // Parsing des arguments
+        // Parsing arguments
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-host") && i + 1 < args.length) {
-                host = args[i + 1];
-            } else if (args[i].equals("-port") && i + 1 < args.length) {
-                try {
-                    port = Integer.parseInt(args[i + 1]);
-                } catch (NumberFormatException e) {
-                    System.err.println("Le port spécifié est invalide : " + args[i + 1]);
-                    System.exit(1);
-                }
-            } else if (args[i].equals("-joinIp") && i + 1 < args.length) {
-                existingNodeIp = args[i + 1];
-            } else if (args[i].equals("-joinPort") && i + 1 < args.length) {
-                try {
-                    existingNodePort = Integer.parseInt(args[i + 1]);
-                } catch (NumberFormatException e) {
-                    System.err.println("Le port du nœud à rejoindre est invalide : " + args[i + 1]);
-                    System.exit(1);
-                }
+            switch (args[i]) {
+                case "-host":
+                    if (i + 1 < args.length) {
+                        host = args[++i];
+                    }
+                    break;
+                case "-port":
+                    if (i + 1 < args.length) {
+                        try {
+                            port = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid port number: " + args[i]);
+                            System.exit(1);
+                        }
+                    }
+                    break;
+                case "-joinIp":
+                    if (i + 1 < args.length) {
+                        existingNodeIp = args[++i];
+                    }
+                    break;
+                case "-joinPort":
+                    if (i + 1 < args.length) {
+                        try {
+                            existingNodePort = Integer.parseInt(args[++i]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid join port number: " + args[i]);
+                            System.exit(1);
+                        }
+                    }
+                    break;
+                case "-multiThreading":
+                    multiThreadingEnabled = true;
+                    break;
+                default:
+                    System.err.println("Unknown argument: " + args[i]);
+                    break;
             }
         }
 
-        // Création du nœud Chord
-        ChordNode node = new ChordNode(host, port);
+        // Create the ChordNode with multi-threading option
+        ChordNode node = new ChordNode(host, port, multiThreadingEnabled);
         ScheduledTask scheduledTask = new ScheduledTask(node);
 
-        // Lancement du service gRPC
+        // Start the gRPC server
         ChordServiceImpl service = new ChordServiceImpl(node);
         Server server = ServerBuilder.forPort(port)
                 .addService(service)
@@ -52,28 +72,27 @@ public class Main {
 
         server.start();
 
-        System.out.println("Nœud " + node.getNodeId() + " démarré sur " + host + ":" + port);
+        System.out.println("Node " + node.getNodeId() + " started on " + host + ":" + port);
 
-        // Rejoindre le réseau
+        // Join the network
         if (existingNodeIp != null && existingNodePort != -1) {
-            // Rejoindre le réseau via un nœud existant
+            // Join the network via an existing node
             node.join(existingNodeIp, existingNodePort);
-            System.out.println("Nœud a rejoint le réseau via " + existingNodeIp + ":" + existingNodePort);
+            System.out.println("Node joined the network via " + existingNodeIp + ":" + existingNodePort);
         } else {
-            // Premier nœud du réseau
+            // First node in the network
             node.join(null, -1);
-            System.out.println("Premier nœud du réseau initialisé.");
+            System.out.println("First node in the network initialized.");
         }
 
         scheduledTask.startScheduledTask();
 
-
-
-        // Garder le serveur en marche
+        // Keep the server running
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Arrêt du serveur gRPC...");
+            System.out.println("Shutting down the gRPC server...");
             scheduledTask.stopScheduledTask();
             node.leave();
+            node.shutdown();
             server.shutdown();
         }));
 

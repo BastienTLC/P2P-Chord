@@ -18,6 +18,14 @@ public class ChordController {
     private String initialHost = "localhost";
     private int initialPort = 8000;
 
+    public String getInitialHost() {
+        return initialHost;
+    }
+
+    public int getInitialPort() {
+        return initialPort;
+    }
+
     @PostMapping("/store/{host}/{port}")
     public boolean storeMessageInChord(@PathVariable String host, @PathVariable int port, @RequestBody Message message) {
         try {
@@ -70,7 +78,7 @@ public class ChordController {
     }
 
     @PatchMapping("/run/{nbNodes}")
-    public boolean runNodes(@PathVariable int nbNodes) {
+    public boolean runNodes(@PathVariable int nbNodes, @RequestParam(value = "multiThreading", required = false, defaultValue = "false") boolean multiThreadingEnabled) {
         int lastPort = 8000;
         try {
             lastPort = getNetworkRing(100).values().stream()
@@ -87,9 +95,9 @@ public class ChordController {
             try {
                 if (i == 8000) {
                     // Bootstrap node
-                    nodeServices.runNode("localhost", i);
+                    nodeServices.runNode("localhost", i, multiThreadingEnabled);
                 } else {
-                    nodeServices.runNode("localhost", i, initialHost, initialPort);
+                    nodeServices.runNode("localhost", i, initialHost, initialPort, multiThreadingEnabled);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

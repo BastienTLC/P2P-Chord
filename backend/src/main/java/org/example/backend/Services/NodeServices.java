@@ -49,23 +49,31 @@ public class NodeServices {
         return Wrapper.wrapGrpcNodeToNode(node);
     }
 
-    public boolean runNode(String host, int port, String joinIp, int joinPort) {
+    public boolean runNode(String host, int port, String existingNodeIp, int existingNodePort, boolean multiThreadingEnabled) {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
-                    "-host", host,
-                    "-port", String.valueOf(port),
-                    "-joinIp", joinIp,
-                    "-joinPort", String.valueOf(joinPort)
-            );
+            ProcessBuilder processBuilder;
+            if (multiThreadingEnabled) {
+                processBuilder = new ProcessBuilder(
+                        "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
+                        "-host", host,
+                        "-port", String.valueOf(port),
+                        "-joinIp", existingNodeIp,
+                        "-joinPort", String.valueOf(existingNodePort),
+                        "-multiThreading"
+                );
+            } else {
+                processBuilder = new ProcessBuilder(
+                        "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
+                        "-host", host,
+                        "-port", String.valueOf(port),
+                        "-joinIp", existingNodeIp,
+                        "-joinPort", String.valueOf(existingNodePort)
+                );
+            }
 
             processBuilder.directory(new File("../node/target"));
             processBuilder.inheritIO();
-
-            // Start the process
             processBuilder.start();
-
-            // Return true immediately after starting the process
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,19 +81,27 @@ public class NodeServices {
         }
     }
 
-    public boolean runNode(String host, int port) {
+    public boolean runNode(String host, int port, boolean multiThreadingEnabled) {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
-                    "-host", host,
-                    "-port", String.valueOf(port)
-            );
+            ProcessBuilder processBuilder;
+            if (multiThreadingEnabled) {
+                processBuilder = new ProcessBuilder(
+                        "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
+                        "-host", host,
+                        "-port", String.valueOf(port),
+                        "-multiThreading"
+                );
+            } else {
+                processBuilder = new ProcessBuilder(
+                        "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
+                        "-host", host,
+                        "-port", String.valueOf(port)
+                );
+            }
 
             processBuilder.directory(new File("../node/target"));
             processBuilder.inheritIO();
-
             processBuilder.start();
-
             return true;
         } catch (IOException e) {
             e.printStackTrace();

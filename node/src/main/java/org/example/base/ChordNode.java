@@ -4,11 +4,12 @@ import org.example.types.Message;
 import org.example.types.NodeHeader;
 import org.example.utils.Wrapper;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChordNode {
     private final String ip;
@@ -20,10 +21,18 @@ public class ChordNode {
     private final int m = 64; // Number of bits for the identifier space
     private NodeHeader currentHeader;
     private MessageStore messageStore;
+    private final boolean multiThreadingEnabled;
+    private final ExecutorService executorService;
 
-    public ChordNode(String ip, int port) {
+    public ChordNode(String ip, int port, boolean multiThreadingEnabled) {
         this.ip = ip;
         this.port = port;
+        this.multiThreadingEnabled = multiThreadingEnabled;
+        if (this.multiThreadingEnabled) {
+            this.executorService = Executors.newCachedThreadPool();
+        } else {
+            this.executorService = null;
+        }
         this.nodeId = hashNode(ip + ":" + port);
         this.fingerTable = new FingerTable(this, m);
         this.currentHeader = new NodeHeader(ip, port, nodeId);
@@ -79,15 +88,25 @@ public class ChordNode {
             // Network is closing
         } else {
             // Transfer keys
-            ChordClient predecessorClient = new ChordClient(predecessor.getIp(), Integer.parseInt(predecessor.getPort()));
-            ChordClient successorClient = new ChordClient(successor.getIp(), Integer.parseInt(successor.getPort()));
-            predecessorClient.setSuccessor(successor);
-            successorClient.setPredecessor(predecessor);
+            final String predecessorIp = predecessor.getIp();
+            final int predecessorPort = Integer.parseInt(predecessor.getPort());
+            final String successorIp = successor.getIp();
+            final int successorPort = Integer.parseInt(successor.getPort());
+
+            Runnable task = () -> {
+                ChordClient predecessorClient = new ChordClient(predecessorIp, predecessorPort);
+                ChordClient successorClient = new ChordClient(successorIp, successorPort);
+                predecessorClient.setSuccessor(successor);
+                successorClient.setPredecessor(predecessor);
+                predecessorClient.shutdown();
+                successorClient.shutdown();
+            };
+
+            executeGrpcCall(task);
+
             this.successor = null;
             this.predecessor = null;
             this.updateOthers();
-            predecessorClient.shutdown();
-            successorClient.shutdown();
         }
     }
 
@@ -103,9 +122,17 @@ public class ChordNode {
 
             NodeHeader predecessorNode = findPredecessor(id);
 
-            ChordClient predecessorClient = new ChordClient(predecessorNode.getIp(), Integer.parseInt(predecessorNode.getPort()));
-            predecessorClient.updateFingerTable(this.currentHeader, i);
-            predecessorClient.shutdown();
+            final String predecessorIp = predecessorNode.getIp();
+            final int predecessorPort = Integer.parseInt(predecessorNode.getPort());
+            final int index = i;
+
+            Runnable task = () -> {
+                ChordClient predecessorClient = new ChordClient(predecessorIp, predecessorPort);
+                predecessorClient.updateFingerTable(this.currentHeader, index);
+                predecessorClient.shutdown();
+            };
+
+            executeGrpcCall(task);
         }
     }
 
@@ -115,9 +142,16 @@ public class ChordNode {
             fingerTable.getFingers().set(i, s);
             NodeHeader p = this.predecessor;
             if (p != null && !p.equals(this.currentHeader)) {
-                ChordClient pClient = new ChordClient(p.getIp(), Integer.parseInt(p.getPort()));
-                pClient.updateFingerTable(s, i);
-                pClient.shutdown();
+                final String predecessorIp = p.getIp();
+                final int predecessorPort = Integer.parseInt(p.getPort());
+
+                Runnable task = () -> {
+                    ChordClient pClient = new ChordClient(predecessorIp, predecessorPort);
+                    pClient.updateFingerTable(s, i);
+                    pClient.shutdown();
+                };
+
+                executeGrpcCall(task);
             }
         }
     }
@@ -181,16 +215,23 @@ public class ChordNode {
     }
 
     // Method to stabilize the node
-    public void stabilize() throws IOException {
-        ChordClient successorClient = new ChordClient(successor.getIp(), Integer.parseInt(successor.getPort()));
-        NodeHeader x = successorClient.getPredecessor();
+    public void stabilize() {
+        final String successorIp = successor.getIp();
+        final int successorPort = Integer.parseInt(successor.getPort());
 
-        if (x != null && isInIntervalOpenOpen(x.getNodeId(), this.nodeId, successor.getNodeId())) {
-            this.successor = x;
-        }
+        Runnable task = () -> {
+            ChordClient successorClient = new ChordClient(successorIp, successorPort);
+            NodeHeader x = successorClient.getPredecessor();
 
-        successorClient.notify(this.currentHeader);
-        successorClient.shutdown();
+            if (x != null && isInIntervalOpenOpen(x.getNodeId(), this.nodeId, successor.getNodeId())) {
+                this.successor = x;
+            }
+
+            successorClient.notify(this.currentHeader);
+            successorClient.shutdown();
+        };
+
+        executeGrpcCall(task);
     }
 
     // Method to notify a node
@@ -201,11 +242,16 @@ public class ChordNode {
     }
 
     // Method to fix fingers periodically
-    public void fixFingers() throws IOException {
+    public void fixFingers() {
         int i = new Random().nextInt(m);
         String start = fingerTable.calculateFingerStart(i);
-        NodeHeader successorNode = findSuccessor(start);
-        fingerTable.getFingers().set(i, successorNode);
+
+        Runnable task = () -> {
+            NodeHeader successorNode = findSuccessor(start);
+            fingerTable.getFingers().set(i, successorNode);
+        };
+
+        executeGrpcCall(task);
     }
 
     public void initFingerTable(ChordClient n0Client) {
@@ -236,22 +282,28 @@ public class ChordNode {
     }
 
     public void storeMessageInChord(String key, Message message) {
-        // Hash the key
-        String keyId = hashNode(key);
+        Runnable task = () -> {
+            // Hash the key
+            String keyId = hashNode(key);
 
-        // Find the responsible node
-        NodeHeader responsibleNode = findSuccessor(keyId);
+            // Find the responsible node
+            NodeHeader responsibleNode = findSuccessor(keyId);
 
-        // Create a client for the responsible node
-        ChordClient responsibleNodeClient = new ChordClient(responsibleNode.getIp(), Integer.parseInt(responsibleNode.getPort()));
+            // Create a client for the responsible node
+            ChordClient responsibleNodeClient = new ChordClient(responsibleNode.getIp(), Integer.parseInt(responsibleNode.getPort()));
 
-        // Store the message on the responsible node
-        responsibleNodeClient.storeMessage(key, Wrapper.wrapMessageToGrpcMessage(message));
+            // Store the message on the responsible node
+            responsibleNodeClient.storeMessage(key, Wrapper.wrapMessageToGrpcMessage(message));
 
-        responsibleNodeClient.shutdown();
+            responsibleNodeClient.shutdown();
+        };
+
+        executeGrpcCall(task);
     }
 
     public Message retrieveMessageFromChord(String key) {
+        // Since we need to return a value, we cannot make this method asynchronous without changing its return type.
+        // For simplicity, we keep it synchronous.
         // Hash the key
         String keyId = hashNode(key);
 
@@ -309,5 +361,22 @@ public class ChordNode {
         } else {
             return idInt.compareTo(startInt) >= 0 || idInt.compareTo(endInt) < 0;
         }
+    }
+
+    // Helper method to execute gRPC calls with optional multi-threading
+    private void executeGrpcCall(Runnable task) {
+        if (multiThreadingEnabled && executorService != null) {
+            executorService.submit(task);
+        } else {
+            task.run();
+        }
+    }
+
+    // Method to shut down the executor service
+    public void shutdown() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdownNow();
+        }
+        // Additional shutdown logic...
     }
 }

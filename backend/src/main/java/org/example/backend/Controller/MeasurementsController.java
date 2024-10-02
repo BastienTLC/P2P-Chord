@@ -16,34 +16,21 @@ import static org.example.backend.Utils.Message.createMessages;
 
 @RestController
 @RequestMapping("/measurements")
+@CrossOrigin(origins = "*")
 public class MeasurementsController {
 
-    private String initialHost = "localhost";
-    private int initialPort = 8000;
     private ChordController chordController = new ChordController();
 
-    @PostMapping("/initialNode/{host}/{port}")
-    public boolean setInitialNode(@PathVariable String host, @PathVariable int port) {
-        NodeServices nodeServices = new NodeServices(host, port);
-        Node initialNode = nodeServices.getChordNodeInfo();
-        if (initialNode != null) {
-            initialHost = host;
-            initialPort = port;
-            return true;
-        } else {
-            System.err.println("Initial node at " + host + ":" + port + " is not available.");
-        }
-        return false;
-    }
 
     @PostMapping("/generateAndStoreMessages")
     public boolean generateAndStoreMessages(
             @RequestParam int nbMessages,
             @RequestParam int dataSize,
-            @RequestParam int nbNodes) {
+            @RequestParam int nbNodes,
+            @RequestParam(value = "multiThreading", required = false, defaultValue = "false") boolean multiThreadingEnabled) {
 
         try {
-            chordController.runNodes(nbNodes);
+            chordController.runNodes(nbNodes, multiThreadingEnabled);
 
             // Wait until the nodes are ready, with a maximum timeout
             long maxWaitTimeMs = 30000; // 30 seconds
@@ -71,7 +58,7 @@ public class MeasurementsController {
 
             List<Message> messages = createMessages(nbMessages, dataSize);
 
-            NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+            NodeServices nodeServices = new NodeServices(chordController.getInitialHost(), chordController.getInitialPort());
             for (Message message : messages) {
                 String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
                 message.setId(key);
@@ -89,12 +76,13 @@ public class MeasurementsController {
     public Map<String, Object> runPerformanceTest(
             @RequestParam int nbNodes,
             @RequestParam int nbMessages,
-            @RequestParam int dataSize) {
+            @RequestParam int dataSize,
+            @RequestParam(value = "multiThreading", required = false, defaultValue = "false") boolean multiThreadingEnabled) {
 
         Map<String, Object> performanceData = new HashMap<>();
 
         try {
-            chordController.runNodes(nbNodes);
+            chordController.runNodes(nbNodes, multiThreadingEnabled);
 
             // Wait until the nodes are ready, with a maximum timeout
             long maxWaitTimeMs = 30000; // 30 seconds
@@ -127,10 +115,13 @@ public class MeasurementsController {
             performanceData.put("nbNodes", nbNodes);
             performanceData.put("nbMessages", nbMessages);
             performanceData.put("dataSize", dataSize);
+            performanceData.put("multiThreadingEnabled", multiThreadingEnabled);
+            performanceData.put("executionTimestamp", System.currentTimeMillis());
+            performanceData.put("entryNode", chordController.getInitialHost() + ":" + chordController.getInitialPort());
 
             // Stop the nodes
             for (int i = 0; i < nbNodes; i++) {
-                NodeServices nodeServices = new NodeServices(initialHost, initialPort + i);
+                NodeServices nodeServices = new NodeServices(chordController.getInitialHost(), chordController.getInitialPort() + i);
                 nodeServices.stopNode();
             }
 
@@ -146,7 +137,7 @@ public class MeasurementsController {
         List<Long> storeTimes = new ArrayList<>();
         long totalStoreTime = 0L;
         int successfulStores = 0;
-        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+        NodeServices nodeServices = new NodeServices(chordController.getInitialHost(), chordController.getInitialPort());
 
         for (Message message : messages) {
             String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
@@ -184,7 +175,7 @@ public class MeasurementsController {
         List<Long> retrieveTimes = new ArrayList<>();
         long totalRetrieveTime = 0L;
         int successfulRetrieves = 0;
-        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+        NodeServices nodeServices = new NodeServices(chordController.getInitialHost(), chordController.getInitialPort());
 
         for (Message message : messages) {
             String key = message.getId();
