@@ -73,6 +73,26 @@ public class NodeServices {
         }
     }
 
+    public boolean runNode(String host, int port) {
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "java", "-jar", "chordNode-1.0-SNAPSHOT.jar",
+                    "-host", host,
+                    "-port", String.valueOf(port)
+            );
+
+            processBuilder.directory(new File("../node/target"));
+            processBuilder.inheritIO();
+
+            processBuilder.start();
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean shutdownNode(int port){
         //kill $(lsof -t -i:8080)
         try {

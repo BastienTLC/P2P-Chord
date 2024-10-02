@@ -19,7 +19,6 @@ public class FingerTable {
         this.m = m;
     }
 
-    // Méthode pour calculer le début de la plage de la i-ème entrée
     public String calculateFingerStart(int i) {
         BigInteger nodeHash = new BigInteger(localNode.getNodeId());
         BigInteger twoPowerI = BigInteger.valueOf(2).pow(i);
@@ -27,6 +26,7 @@ public class FingerTable {
         BigInteger start = nodeHash.add(twoPowerI).mod(twoPowerM);
         return start.toString();
     }
+
 
 
 

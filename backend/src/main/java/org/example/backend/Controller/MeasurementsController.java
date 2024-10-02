@@ -1,6 +1,5 @@
 package org.example.backend.Controller;
 
-
 import org.example.backend.Entity.Message;
 import org.example.backend.Entity.Node;
 import org.example.backend.Services.NodeServices;
@@ -23,7 +22,6 @@ public class MeasurementsController {
     private int initialPort = 8000;
     private ChordController chordController = new ChordController();
 
-    // Fonction pour définir le nœud initial si nécessaire
     @PostMapping("/initialNode/{host}/{port}")
     public boolean setInitialNode(@PathVariable String host, @PathVariable int port) {
         NodeServices nodeServices = new NodeServices(host, port);
@@ -32,109 +30,190 @@ public class MeasurementsController {
             initialHost = host;
             initialPort = port;
             return true;
+        } else {
+            System.err.println("Initial node at " + host + ":" + port + " is not available.");
         }
         return false;
     }
 
-    // Génération et stockage des messages
     @PostMapping("/generateAndStoreMessages")
     public boolean generateAndStoreMessages(
-            @RequestParam int quantity,
+            @RequestParam int nbMessages,
             @RequestParam int dataSize,
             @RequestParam int nbNodes) {
 
-        // Lancer les nœuds
-        chordController.runNodes(nbNodes);
+        try {
+            chordController.runNodes(nbNodes);
 
-        // Générer les messages
-        List<Message> messages = createMessages(quantity, dataSize);
+            // Wait until the nodes are ready, with a maximum timeout
+            long maxWaitTimeMs = 30000; // 30 seconds
+            long waitedTimeMs = 0;
+            long sleepIntervalMs = 2000;
+            boolean isReady = false;
 
-        // Stocker les messages
-        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
-        for (Message message : messages) {
-            String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
-            message.setId(key);
-            nodeServices.storeMessageInChord(key, message);
+            while (waitedTimeMs < maxWaitTimeMs) {
+                if (chordController.chordIsReady(nbNodes)) {
+                    isReady = true;
+                    break;
+                }
+                try {
+                    Thread.sleep(sleepIntervalMs);
+                    waitedTimeMs += sleepIntervalMs;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Thread was interrupted", e);
+                }
+            }
+
+            if (!isReady) {
+                throw new RuntimeException("Chord network is not ready after waiting " + maxWaitTimeMs + " ms");
+            }
+
+            List<Message> messages = createMessages(nbMessages, dataSize);
+
+            NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+            for (Message message : messages) {
+                String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
+                message.setId(key);
+                nodeServices.storeMessageInChord(key, message);
+            }
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-
-        return true;
     }
 
-    // Fonction pour exécuter les tests de performance
     @GetMapping("/runTest")
     public Map<String, Object> runPerformanceTest(
             @RequestParam int nbNodes,
             @RequestParam int nbMessages,
             @RequestParam int dataSize) {
 
-        // Lancer les nœuds
-        chordController.runNodes(nbNodes);
-
-        while(!chordController.chordIsReady(nbNodes + 1)) {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Générer les messages
-        List<Message> messages = createMessages(nbMessages, dataSize);
-
-        // Mesures de performance
         Map<String, Object> performanceData = new HashMap<>();
-        List<Long> storeTimes = new ArrayList<>();
-        List<Long> retrieveTimes = new ArrayList<>();
 
-        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+        try {
+            chordController.runNodes(nbNodes);
 
-        // Stocker les messages et mesurer le temps
-        for (Message message : messages) {
-            String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
-            message.setId(key);
-            long startTime = System.nanoTime();
-            nodeServices.storeMessageInChord(key, message);
-            long endTime = System.nanoTime();
-            storeTimes.add(TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
+            // Wait until the nodes are ready, with a maximum timeout
+            long maxWaitTimeMs = 30000; // 30 seconds
+            long waitedTimeMs = 0;
+            long sleepIntervalMs = 2000;
+            boolean isReady = false;
+
+            while (waitedTimeMs < maxWaitTimeMs) {
+                if (chordController.chordIsReady(nbNodes)) {
+                    isReady = true;
+                    break;
+                }
+                try {
+                    Thread.sleep(sleepIntervalMs);
+                    waitedTimeMs += sleepIntervalMs;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Thread was interrupted", e);
+                }
+            }
+
+            if (!isReady) {
+                throw new RuntimeException("Chord network is not ready after waiting " + maxWaitTimeMs + " ms");
+            }
+
+            List<Message> messages = createMessages(nbMessages, dataSize);
+
+            performanceData.put("storeMetrics", storeMessages(messages, dataSize));
+            performanceData.put("retrieveMetrics", retrieveMessages(messages, dataSize));
+            performanceData.put("nbNodes", nbNodes);
+            performanceData.put("nbMessages", nbMessages);
+            performanceData.put("dataSize", dataSize);
+
+            // Stop the nodes
+            for (int i = 0; i < nbNodes; i++) {
+                NodeServices nodeServices = new NodeServices(initialHost, initialPort + i);
+                nodeServices.stopNode();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            performanceData.put("error", e.getMessage());
         }
 
-        // Récupérer les messages et mesurer le temps
-        for (Message message : messages) {
-            String key = message.getId();
-            long startTime = System.nanoTime();
-            nodeServices.retrieveMessageFromChord(key);
-            long endTime = System.nanoTime();
-            retrieveTimes.add(TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
-        }
-
-        performanceData.put("nbNodes", nbNodes);
-        performanceData.put("nbMessages", nbMessages);
-        performanceData.put("dataSize", dataSize);
-        performanceData.put("storeTimes", storeTimes);
-        performanceData.put("retrieveTimes", retrieveTimes);
-
-        for (int i = 0; i < nbNodes; i++) {
-            nodeServices = new NodeServices(initialHost, initialPort + i);
-            nodeServices.stopNode();
-        }
         return performanceData;
     }
 
-    @GetMapping("/runTestScalingNodes")
-    public List<Map<String, Object>> runTestScalingNodes(
-            @RequestParam int startNodes,
-            @RequestParam int endNodes,
-            @RequestParam int stepNodes,
-            @RequestParam int nbMessages,
-            @RequestParam int dataSize) {
+    private Map<String, Object> storeMessages(List<Message> messages, int dataSize) {
+        List<Long> storeTimes = new ArrayList<>();
+        long totalStoreTime = 0L;
+        int successfulStores = 0;
+        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
 
-        List<Map<String, Object>> results = new ArrayList<>();
+        for (Message message : messages) {
+            String key = Hash.hashKey(message.getAuthor() + ":" + message.getTimestamp());
+            message.setId(key);
 
-        for (int nbNodes = startNodes; nbNodes <= endNodes; nbNodes += stepNodes) {
-            Map<String, Object> result = runPerformanceTest(nbNodes, nbMessages, dataSize);
-            results.add(result);
+            long startTime = System.nanoTime();
+            try {
+                nodeServices.storeMessageInChord(key, message);
+                long endTime = System.nanoTime();
+                long duration = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
+                storeTimes.add(duration);
+                totalStoreTime += duration;
+                successfulStores++;
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Continue to next message
+            }
         }
 
-        return results;
+        double totalSeconds = totalStoreTime / 1000.0; // Convert to seconds
+        double bandWidth = (dataSize * successfulStores * 8) / totalSeconds; // In bits per second (bps)
+        double throughput = successfulStores / totalSeconds; // In messages per second
+
+        Map<String, Object> storeMetrics = new HashMap<>();
+        storeMetrics.put("totalStoreTimeMs", totalStoreTime);
+        storeMetrics.put("bandWidthBitsPerSec", bandWidth);
+        storeMetrics.put("throughputMessagesPerSec", throughput);
+        storeMetrics.put("successfulStores", successfulStores);
+        storeMetrics.put("failedStores", messages.size() - successfulStores);
+
+        return storeMetrics;
+    }
+
+    private Map<String, Object> retrieveMessages(List<Message> messages, int dataSize) {
+        List<Long> retrieveTimes = new ArrayList<>();
+        long totalRetrieveTime = 0L;
+        int successfulRetrieves = 0;
+        NodeServices nodeServices = new NodeServices(initialHost, initialPort);
+
+        for (Message message : messages) {
+            String key = message.getId();
+
+            long startTime = System.nanoTime();
+            try {
+                nodeServices.retrieveMessageFromChord(key);
+                long endTime = System.nanoTime();
+                long duration = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
+                retrieveTimes.add(duration);
+                totalRetrieveTime += duration;
+                successfulRetrieves++;
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Continue to next message
+            }
+        }
+
+        double totalSeconds = totalRetrieveTime / 1000.0; // Convert to seconds
+        double bandWidth = (dataSize * successfulRetrieves * 8) / totalSeconds; // In bits per second (bps)
+        double throughput = successfulRetrieves / totalSeconds; // In messages per second
+
+        Map<String, Object> retrieveMetrics = new HashMap<>();
+        retrieveMetrics.put("totalRetrieveTimeMs", totalRetrieveTime);
+        retrieveMetrics.put("bandWidthBitsPerSec", bandWidth);
+        retrieveMetrics.put("throughputMessagesPerSec", throughput);
+        retrieveMetrics.put("successfulRetrieves", successfulRetrieves);
+        retrieveMetrics.put("failedRetrieves", messages.size() - successfulRetrieves);
+
+        return retrieveMetrics;
     }
 }
