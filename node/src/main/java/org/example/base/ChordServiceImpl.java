@@ -20,15 +20,12 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void join(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
-        System.out.println("Reçu une requête join de " + request.getNewNode().getId());
-        // Traitement de la requête join si nécessaire
         responseObserver.onNext(JoinResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
 
     @Override
     public void stabilize(StabilizeRequest request, StreamObserver<StabilizeResponse> responseObserver) {
-        System.out.println("Reçu une requête stabilize de " + request.getCaller().getId());
         try {
             chordNode.stabilize();
             responseObserver.onNext(StabilizeResponse.newBuilder().setSuccess(true).build());
@@ -42,7 +39,6 @@ public class ChordServiceImpl extends ChordImplBase {
     @Override
     public void notify(NotifyRequest request, StreamObserver<NotifyResponse> responseObserver) {
         NodeInfo callerInfo = request.getCaller();
-        System.out.println("Reçu une notification de " + callerInfo.getId());
         NodeHeader callerNode = new NodeHeader(callerInfo.getIp(), callerInfo.getPort(), callerInfo.getId());
         chordNode.notify(callerNode);
         responseObserver.onNext(NotifyResponse.newBuilder().setSuccess(true).build());
@@ -51,7 +47,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void findSuccessor(NodeInfo request, StreamObserver<NodeInfo> responseObserver) {
-        System.out.println("Reçu une requête findSuccessor pour l'id " + request.getId());
         NodeHeader successor = chordNode.findSuccessor(request.getId());
         if (successor != null) {
             NodeInfo nodeInfo = NodeInfo.newBuilder()
@@ -68,7 +63,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void getPredecessor(Empty request, StreamObserver<NodeInfo> responseObserver) {
-        System.out.println("Reçu une requête getPredecessor");
         NodeHeader predecessor = chordNode.getPredecessor();
         if (predecessor != null) {
             NodeInfo nodeInfo = NodeInfo.newBuilder()
@@ -85,7 +79,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void setPredecessor(NodeInfo request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
-        System.out.println("Reçu une requête setPredecessor de " + request.getId());
         NodeHeader predecessor = new NodeHeader(request.getIp(), request.getPort(), request.getId());
         chordNode.setPredecessor(predecessor);
         responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
@@ -94,7 +87,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void getSuccessor(Empty request, StreamObserver<NodeInfo> responseObserver) {
-        System.out.println("Reçu une requête getSuccessor");
         NodeHeader successor = chordNode.getSuccessor();
         if (successor != null) {
             NodeInfo nodeInfo = NodeInfo.newBuilder()
@@ -111,7 +103,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void setSuccessor(NodeInfo request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
-        System.out.println("Reçu une requête setSuccessor de " + request.getId());
         NodeHeader successor = new NodeHeader(request.getIp(), request.getPort(), request.getId());
         chordNode.setSuccessor(successor);
         responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
@@ -120,7 +111,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void updateFingerTable(UpdateFingerTableRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
-        System.out.println("Reçu une requête updateFingerTable avec le nœud " + request.getS().getId() + " à l'index " + request.getI());
         NodeInfo sNodeInfo = request.getS();
         int i = request.getI();
         this.chordNode.updateFingerTable(new NodeHeader(sNodeInfo.getIp(), sNodeInfo.getPort(), sNodeInfo.getId()), i);
@@ -130,7 +120,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void getNodeInfo(GetNodeInfoRequest request, StreamObserver<GetNodeInfoResponse> responseObserver) {
-        System.out.println("Reçu une requête getNodeInfo");
         NodeInfo nodeInfo = NodeInfo.newBuilder()
                 .setId(chordNode.getNodeId())
                 .setIp(chordNode.getIp())
@@ -142,7 +131,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void closestPrecedingFinger(ClosestRequest request, StreamObserver<NodeInfo> responseObserver) {
-        System.out.println("Reçu une requête closestPrecedingFinger pour l'id " + request.getId());
         String id = request.getId();
         NodeHeader closestPrecedingFinger = chordNode.closestPrecedingFinger(id);
         if (closestPrecedingFinger != null) {
@@ -167,10 +155,9 @@ public class ChordServiceImpl extends ChordImplBase {
         Message messageRpc = request.getMessage();
         org.example.types.Message message = Wrapper.wrapGrpcMessageToMessage(messageRpc);
 
-        // Stocker le message localement
+        // stpre
         chordNode.getMessageStore().storeMessage(key, message);
 
-        // Répondre avec succès
         StoreMessageResponse response = StoreMessageResponse.newBuilder()
                 .setSuccess(true)
                 .build();
@@ -205,10 +192,8 @@ public class ChordServiceImpl extends ChordImplBase {
         Message messageRpc = request.getMessage();
         org.example.types.Message message = Wrapper.wrapGrpcMessageToMessage(messageRpc);
 
-        // Stocker le message localement
         chordNode.storeMessageInChord(key, message);
 
-        // Répondre avec succès
         StoreMessageResponse response = StoreMessageResponse.newBuilder()
                 .setSuccess(true)
                 .build();
@@ -250,7 +235,6 @@ public class ChordServiceImpl extends ChordImplBase {
 
     @Override
     public void getChordNodeInfo(com.google.protobuf.Empty request, StreamObserver<Node> responseObserver) {
-        System.out.println("Reçu une requête getChordNodeInfo");
         ChordProto.MessageStore messageStore = ChordProto.MessageStore.newBuilder()
                 .addAllMessages(chordNode.getMessageStore().getStorage().values().stream().map(message -> Message.newBuilder()
                         .setId(message.getId())

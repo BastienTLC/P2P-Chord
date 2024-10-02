@@ -33,46 +33,46 @@ service Chord {
 }
 
 message NodeInfo {
-  string id = 1;    // Unique identifier (e.g., hash of the IP or node id)
-  string ip = 2;    // IP address of the node
-  int32 port = 3;   // Port where the node is listening
+  string id = 1;
+  string ip = 2;
+  int32 port = 3;
 }
 
 message JoinRequest {
-  NodeInfo new_node = 1;  // Node that wants to join the network
+  NodeInfo new_node = 1;
 }
 
 message JoinResponse {
-  bool success = 1;        // Whether the join operation succeeded
-  NodeInfo successor = 2;  // Successor node of the new node
+  bool success = 1;
+  NodeInfo successor = 2;
 }
 
 message StabilizeRequest {
-  NodeInfo caller = 1;    // The node calling stabilize
+  NodeInfo caller = 1;
 }
 
 message StabilizeResponse {
-  bool success = 1;       // Whether stabilization succeeded
+  bool success = 1;
 }
 
 message NotifyRequest {
-  NodeInfo caller = 1;    // The node notifying its successor
+  NodeInfo caller = 1;
 }
 
 message NotifyResponse {
-  bool success = 1;       // Whether the notify succeeded
+  bool success = 1;
 }
 
 message LeaveResponse {
-  bool success = 1;       // Whether the leave operation was successful
+  bool success = 1;
 }
 
 message PingRequest {
-  NodeInfo node = 1;      // The node that is pinging to check health
+  NodeInfo node = 1;
 }
 
 message PingResponse {
-  bool alive = 1;         // Whether the node is alive
+  bool alive = 1;
 }
 
 message UpdateFingerTableRequest {

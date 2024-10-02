@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Hash {
-    private static final int M = 64; // Nombre de bits pour l'espace d'identifiants
+    private static final int M = 64;
 
     public static String hashKey(String key) {
         try {

@@ -105,7 +105,7 @@ public class MeasurementsController {
             }
 
             if (!isReady) {
-                throw new RuntimeException("Chord network is not ready after waiting " + maxWaitTimeMs + " ms");
+                throw new RuntimeException("Chord network is not ready after waiting " + maxWaitTimeMs );
             }
 
             List<Message> messages = createMessages(nbMessages, dataSize);
@@ -158,7 +158,7 @@ public class MeasurementsController {
         }
 
         double totalSeconds = totalStoreTime / 1000.0; // Convert to seconds
-        double bandWidth = (dataSize * successfulStores * 8) / totalSeconds; // In bits per second (bps)
+        double bandWidth = (dataSize * successfulStores * 8) / totalSeconds; // In bits per second
         double throughput = successfulStores / totalSeconds; // In messages per second
 
         Map<String, Object> storeMetrics = new HashMap<>();
@@ -194,9 +194,9 @@ public class MeasurementsController {
             }
         }
 
-        double totalSeconds = totalRetrieveTime / 1000.0; // Convert to seconds
-        double bandWidth = (dataSize * successfulRetrieves * 8) / totalSeconds; // In bits per second (bps)
-        double throughput = successfulRetrieves / totalSeconds; // In messages per second
+        double totalSeconds = totalRetrieveTime / 1000.0;
+        double bandWidth = (dataSize * successfulRetrieves * 8) / totalSeconds;
+        double throughput = successfulRetrieves / totalSeconds;
 
         Map<String, Object> retrieveMetrics = new HashMap<>();
         retrieveMetrics.put("totalRetrieveTimeMs", totalRetrieveTime);

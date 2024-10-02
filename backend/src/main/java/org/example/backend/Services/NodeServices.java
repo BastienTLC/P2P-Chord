@@ -71,7 +71,7 @@ public class NodeServices {
                 );
             }
 
-            processBuilder.directory(new File("../node/target"));
+            processBuilder.directory(new File("../../node/target"));
             processBuilder.inheritIO();
             processBuilder.start();
             return true;
@@ -99,7 +99,7 @@ public class NodeServices {
                 );
             }
 
-            processBuilder.directory(new File("../node/target"));
+            processBuilder.directory(new File("../../node/target"));
             processBuilder.inheritIO();
             processBuilder.start();
             return true;
@@ -110,7 +110,6 @@ public class NodeServices {
     }
 
     public boolean shutdownNode(int port){
-        //kill $(lsof -t -i:8080)
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "kill", "$", "lsof", "-t", "-i:"+port

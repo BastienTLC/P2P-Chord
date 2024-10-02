@@ -131,7 +131,7 @@ public class ChordController {
 
         nodeMap.put(currentNode.getId(), currentNode);
 
-        NodeHeader successorHeader = currentNode.getSuccessor(); // Corrected from getPredecessor()
+        NodeHeader successorHeader = currentNode.getSuccessor();
         if (successorHeader != null && !nodeMap.containsKey(successorHeader.getId())) {
             try {
                 NodeServices successorServices = new NodeServices(successorHeader.getIp(), successorHeader.getPort());
@@ -140,7 +140,6 @@ public class ChordController {
                 traverseNetworkRing(successorNode, depth - 1, nodeMap);
             } catch (Exception e) {
                 e.printStackTrace();
-                // Stop traversing further
             }
         }
     }
