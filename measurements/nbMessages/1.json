@@ -1,0 +1,86 @@
+[
+    {
+        "nbMessages": 100,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 1407,
+        "totalStoreTimeMs": 3607,
+        "executionTimestamp": 1727937065242
+    },
+    {
+        "nbMessages": 300,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 2699,
+        "totalStoreTimeMs": 5243,
+        "executionTimestamp": 1727937080234
+    },
+    {
+        "nbMessages": 500,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 3499,
+        "totalStoreTimeMs": 6952,
+        "executionTimestamp": 1727937095803
+    },
+    {
+        "nbMessages": 700,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 4423,
+        "totalStoreTimeMs": 7929,
+        "executionTimestamp": 1727937115580
+    },
+    {
+        "nbMessages": 900,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 5280,
+        "totalStoreTimeMs": 8370,
+        "executionTimestamp": 1727937141322
+    },
+    {
+        "nbMessages": 1100,
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 5255,
+        "totalStoreTimeMs": 11583,
+        "executionTimestamp": 1727937165966
+    },
+    {
+        "nbMessages": 100,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 2378,
+        "totalStoreTimeMs": 1552,
+        "executionTimestamp": 1727937176625
+    },
+    {
+        "nbMessages": 300,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 4964,
+        "totalStoreTimeMs": 3457,
+        "executionTimestamp": 1727937192003
+    },
+    {
+        "nbMessages": 500,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 5549,
+        "totalStoreTimeMs": 5449,
+        "executionTimestamp": 1727937211048
+    },
+    {
+        "nbMessages": 700,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 6059,
+        "totalStoreTimeMs": 7410,
+        "executionTimestamp": 1727937229894
+    },
+    {
+        "nbMessages": 900,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 5715,
+        "totalStoreTimeMs": 6002,
+        "executionTimestamp": 1727937249197
+    },
+    {
+        "nbMessages": 1100,
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 6455,
+        "totalStoreTimeMs": 6924,
+        "executionTimestamp": 1727937270662
+    }
+]

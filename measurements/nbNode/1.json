@@ -1,0 +1,71 @@
+[
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 673,
+        "totalStoreTimeMs": 990,
+        "nbNodes": 1,
+        "executionTimestamp": 1727946220663
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 1003,
+        "totalStoreTimeMs": 1239,
+        "nbNodes": 3,
+        "executionTimestamp": 1727946227470
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 818,
+        "totalStoreTimeMs": 1863,
+        "nbNodes": 5,
+        "executionTimestamp": 1727946236816
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 1501,
+        "totalStoreTimeMs": 3101,
+        "nbNodes": 7,
+        "executionTimestamp": 1727946252639
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 3447,
+        "totalStoreTimeMs": 4880,
+        "nbNodes": 9,
+        "executionTimestamp": 1727946274595
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 1167,
+        "totalStoreTimeMs": 375,
+        "nbNodes": 1,
+        "executionTimestamp": 1727946278693
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 2344,
+        "totalStoreTimeMs": 808,
+        "nbNodes": 3,
+        "executionTimestamp": 1727946284395
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 2763,
+        "totalStoreTimeMs": 933,
+        "nbNodes": 5,
+        "executionTimestamp": 1727946294854
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 3604,
+        "totalStoreTimeMs": 1153,
+        "nbNodes": 7,
+        "executionTimestamp": 1727946311996
+    },
+    {
+        "multiThreadingEnabled": true,
+        "nbNodes": 9,
+        "error": "Chord network is not ready after waiting 30000",
+        "executionTimestamp": 1727946344116
+    }
+]

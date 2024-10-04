@@ -1,0 +1,72 @@
+[
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 936,
+        "totalStoreTimeMs": 2229,
+        "dataSize": 1024,
+        "executionTimestamp": 1727943195934
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 1255,
+        "totalStoreTimeMs": 1740,
+        "dataSize": 2048,
+        "executionTimestamp": 1727943205634
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 1137,
+        "totalStoreTimeMs": 1494,
+        "dataSize": 3072,
+        "executionTimestamp": 1727943215037
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 870,
+        "totalStoreTimeMs": 1573,
+        "dataSize": 4096,
+        "executionTimestamp": 1727943224198
+    },
+    {
+        "multiThreadingEnabled": false,
+        "totalRetrieveTimeMs": 940,
+        "totalStoreTimeMs": 929,
+        "dataSize": 5120,
+        "executionTimestamp": 1727943232793
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 1821,
+        "totalStoreTimeMs": 523,
+        "dataSize": 1024,
+        "executionTimestamp": 1727943437671
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 2541,
+        "totalStoreTimeMs": 684,
+        "dataSize": 2048,
+        "executionTimestamp": 1727943269570
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 1203,
+        "totalStoreTimeMs": 447,
+        "dataSize": 3072,
+        "executionTimestamp": 1727943280156
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 3554,
+        "totalStoreTimeMs": 1140,
+        "dataSize": 4096,
+        "executionTimestamp": 1727943289745
+    },
+    {
+        "multiThreadingEnabled": true,
+        "totalRetrieveTimeMs": 1617,
+        "totalStoreTimeMs": 766,
+        "dataSize": 5120,
+        "executionTimestamp": 1727943308387
+    }
+]
