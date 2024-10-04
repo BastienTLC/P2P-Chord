@@ -1,5 +1,4 @@
-// components/MessageInterface.tsx
-import React, {useRef, useState} from 'react';
+import React, { useRef, useState } from 'react';
 import { useChordStore } from '../store/store';
 import { Message } from '../models/Message';
 import { storeMessageInChord, retrieveMessageFromChord } from '../services/ChordService';
@@ -17,24 +16,24 @@ const MessageView: React.FC = () => {
 
     const handleSendMessage = async () => {
         if (!selectedNode) {
-            msgs.current.show({ severity: 'warn', summary: 'Attention', detail: 'Sélectionnez un nœud d\'abord.' });
+            msgs.current.show({ severity: 'warn', summary: 'Warning', detail: 'Please select a node first.' });
             return;
         }
 
         const message: Message = {
-            id: '', // L'ID sera généré par le backend
+            id: '',
             timestamp: Date.now(),
-            author: 'Utilisateur', // Ajustez selon vos besoins
-            topic: 'Général',
+            author: 'User',
+            topic: 'General',
             content: messageContent,
             data: '',
         };
 
         const success = await storeMessageInChord(selectedNode, message);
         if (success) {
-            msgs.current.show({ severity: 'success', summary: 'Succès', detail: 'Message stocké avec succès.' });
+            msgs.current.show({ severity: 'success', summary: 'Success', detail: 'Message stored successfully.' });
         } else {
-            msgs.current.show({ severity: 'error', summary: 'Erreur', detail: 'Échec du stockage du message.' });
+            msgs.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to store the message.' });
         }
     };
 
@@ -42,19 +41,19 @@ const MessageView: React.FC = () => {
         const message = await retrieveMessageFromChord(searchKey);
         if (message) {
             setRetrievedMessage(message);
-            msgs.current.show({ severity: 'success', summary: 'Succès', detail: 'Message récupéré avec succès.' });
+            msgs.current.show({ severity: 'success', summary: 'Success', detail: 'Message retrieved successfully.' });
         } else {
             setRetrievedMessage(null);
-            msgs.current.show({ severity: 'info', summary: 'Info', detail: 'Message non trouvé.' });
+            msgs.current.show({ severity: 'info', summary: 'Info', detail: 'Message not found.' });
         }
     };
 
     return (
         <div>
-            <h2>Interface de Message</h2>
+            <h2>Message Interface</h2>
             <Messages ref={msgs} />
             <div className="p-field">
-                <label htmlFor="messageContent">Contenu du Message</label>
+                <label htmlFor="messageContent">Message Content</label>
                 <InputTextarea
                     id="messageContent"
                     value={messageContent}
@@ -63,25 +62,25 @@ const MessageView: React.FC = () => {
                     cols={30}
                 />
             </div>
-            <Button label="Envoyer le Message" onClick={handleSendMessage} className="p-mt-2" />
+            <Button label="Send Message" onClick={handleSendMessage} className="p-mt-2" />
 
             <div className="p-field p-mt-4">
-                <label htmlFor="searchKey">Rechercher un Message par Clé</label>
+                <label htmlFor="searchKey">Search Message by Key</label>
                 <InputText
                     id="searchKey"
                     value={searchKey}
                     onChange={(e) => setSearchKey(e.target.value)}
                 />
             </div>
-            <Button label="Rechercher le Message" onClick={handleRetrieveMessage} className="p-mt-2" />
+            <Button label="Search Message" onClick={handleRetrieveMessage} className="p-mt-2" />
 
             {retrievedMessage && (
                 <div className="p-mt-4">
-                    <h3>Message Récupéré</h3>
-                    <p><strong>ID :</strong> {retrievedMessage.id}</p>
-                    <p><strong>Auteur :</strong> {retrievedMessage.author}</p>
-                    <p><strong>Timestamp :</strong> {new Date(retrievedMessage.timestamp).toLocaleString()}</p>
-                    <p><strong>Contenu :</strong> {retrievedMessage.content}</p>
+                    <h3>Retrieved Message</h3>
+                    <p><strong>ID:</strong> {retrievedMessage.id}</p>
+                    <p><strong>Author:</strong> {retrievedMessage.author}</p>
+                    <p><strong>Timestamp:</strong> {new Date(retrievedMessage.timestamp).toLocaleString()}</p>
+                    <p><strong>Content:</strong> {retrievedMessage.content}</p>
                 </div>
             )}
         </div>

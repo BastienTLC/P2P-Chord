@@ -11,7 +11,7 @@ import java.util.List;
 public class FingerTable {
     private final List<NodeHeader> fingers;
     private final ChordNode localNode;
-    private final int m; // Nombre de bits pour l'espace d'identifiants
+    private final int m; // Nombre de bits finger table
 
     public FingerTable(ChordNode localNode, int m) {
         this.localNode = localNode;
@@ -26,8 +26,6 @@ public class FingerTable {
         BigInteger start = nodeHash.add(twoPowerI).mod(twoPowerM);
         return start.toString();
     }
-
-
 
 
     public List<NodeHeader> getFingers() { return fingers; }

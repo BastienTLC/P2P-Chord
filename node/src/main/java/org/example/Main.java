@@ -13,7 +13,7 @@ public class Main {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
         // Default values
         String host = "localhost";
-        int port = 50051;
+        int port = 8000;
         String existingNodeIp = null;
         int existingNodePort = -1;
         boolean multiThreadingEnabled = false;
@@ -60,7 +60,7 @@ public class Main {
             }
         }
 
-        // Create the ChordNode with multi-threading option
+        // Create the ChordNode
         ChordNode node = new ChordNode(host, port, multiThreadingEnabled);
         ScheduledTask scheduledTask = new ScheduledTask(node);
 
@@ -68,6 +68,7 @@ public class Main {
         ChordServiceImpl service = new ChordServiceImpl(node);
         Server server = ServerBuilder.forPort(port)
                 .addService(service)
+                .maxInboundMessageSize(1000000000 )
                 .build();
 
         server.start();
@@ -76,11 +77,11 @@ public class Main {
 
         // Join the network
         if (existingNodeIp != null && existingNodePort != -1) {
-            // Join the network via an existing node
+            // Join the network existing node
             node.join(existingNodeIp, existingNodePort);
             System.out.println("Node joined the network via " + existingNodeIp + ":" + existingNodePort);
         } else {
-            // First node in the network
+            // First node in the network boorstrap
             node.join(null, -1);
             System.out.println("First node in the network initialized.");
         }

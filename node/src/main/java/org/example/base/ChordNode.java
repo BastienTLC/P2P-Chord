@@ -39,7 +39,7 @@ public class ChordNode {
         this.messageStore = new MessageStore();
     }
 
-    // Function to hash the node ID based on its IP and port
+    // Function to hash the node ID based on IP and port
     private String hashNode(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
@@ -53,7 +53,6 @@ public class ChordNode {
         }
     }
 
-    // Getters and Setters
     public String getNodeId() { return this.nodeId; }
     public String getIp() { return this.ip; }
     public int getPort() { return this.port; }
@@ -71,9 +70,7 @@ public class ChordNode {
             initFingerTable(chordClient);
             this.updateOthers();
             chordClient.shutdown();
-            // Move appropriate keys from the successor if necessary
         } else {
-            // First node in the network
             for (int i = 0; i < m; i++) {
                 fingerTable.getFingers().set(i, currentHeader);
             }
@@ -85,7 +82,7 @@ public class ChordNode {
     public void leave() {
         // Last node in the network
         if (this.predecessor.equals(this.currentHeader) && this.successor.equals(this.currentHeader)) {
-            // Network is closing
+
         } else {
             // Transfer keys
             final String predecessorIp = predecessor.getIp();
@@ -110,7 +107,7 @@ public class ChordNode {
         }
     }
 
-    // Method to update other nodes' finger tables
+    // Method to update other nodes finger tables
     public void updateOthers() {
         BigInteger mod = BigInteger.valueOf(2).pow(m);
         BigInteger nodeIdInt = new BigInteger(this.nodeId);
@@ -255,13 +252,13 @@ public class ChordNode {
     }
 
     public void initFingerTable(ChordClient n0Client) {
-        // Step 1: Initialize finger[0]
+        //Initialize finger
         String start0 = fingerTable.calculateFingerStart(0);
         NodeHeader successorNode = n0Client.findSuccessor(start0);
         fingerTable.getFingers().set(0, successorNode);
         this.setSuccessor(successorNode);
 
-        // Step 2: Set predecessor
+        //Set predecessor
         ChordClient successorClient = new ChordClient(successorNode.getIp(), Integer.parseInt(successorNode.getPort()));
         NodeHeader successorPredecessor = successorClient.getPredecessor();
         this.setPredecessor(successorPredecessor);
@@ -269,7 +266,7 @@ public class ChordNode {
         successorClient.setPredecessor(this.currentHeader);
         successorClient.shutdown();
 
-        // Step 3: Initialize other entries of the finger table
+        //Initialize other figer table
         for (int i = 1; i < m; i++) {
             String start = fingerTable.calculateFingerStart(i);
             if (isInIntervalClosedOpen(start, this.nodeId, fingerTable.getFingers().get(i - 1).getNodeId())) {
@@ -289,7 +286,6 @@ public class ChordNode {
             // Find the responsible node
             NodeHeader responsibleNode = findSuccessor(keyId);
 
-            // Create a client for the responsible node
             ChordClient responsibleNodeClient = new ChordClient(responsibleNode.getIp(), Integer.parseInt(responsibleNode.getPort()));
 
             // Store the message on the responsible node
@@ -302,18 +298,13 @@ public class ChordNode {
     }
 
     public Message retrieveMessageFromChord(String key) {
-        // Since we need to return a value, we cannot make this method asynchronous without changing its return type.
-        // For simplicity, we keep it synchronous.
-        // Hash the key
+        //async not implemented for retrieve
         String keyId = hashNode(key);
 
         // Find the responsible node
         NodeHeader responsibleNode = findSuccessor(keyId);
 
-        // Create a client for the responsible node
         ChordClient responsibleNodeClient = new ChordClient(responsibleNode.getIp(), Integer.parseInt(responsibleNode.getPort()));
-
-        // Retrieve the message from the responsible node
         Message message = Wrapper.wrapGrpcMessageToMessage(responsibleNodeClient.retrieveMessage(key));
 
         responsibleNodeClient.shutdown();
@@ -377,6 +368,5 @@ public class ChordNode {
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdownNow();
         }
-        // Additional shutdown logic...
     }
 }

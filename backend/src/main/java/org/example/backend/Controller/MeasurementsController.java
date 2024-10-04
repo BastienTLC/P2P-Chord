@@ -337,12 +337,12 @@ public class MeasurementsController {
         }
 
         double totalSeconds = totalRetrieveTime / 1000.0;
-        double bandWidth = (dataSize * successfulRetrieves * 8) / totalSeconds;
+        double bandWidth = (dataSize * successfulRetrieves) / totalSeconds;
         double throughput = successfulRetrieves / totalSeconds;
 
         Map<String, Object> retrieveMetrics = new HashMap<>();
         retrieveMetrics.put("totalRetrieveTimeMs", totalRetrieveTime);
-        retrieveMetrics.put("bandWidthBitsPerSec", bandWidth);
+        retrieveMetrics.put("bandWidthBytesPerSec", bandWidth);
         retrieveMetrics.put("throughputMessagesPerSec", throughput);
         retrieveMetrics.put("successfulRetrieves", successfulRetrieves);
         retrieveMetrics.put("failedRetrieves", messages.size() - successfulRetrieves);

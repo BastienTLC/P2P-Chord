@@ -30,7 +30,7 @@ public class ChordServiceImpl extends ChordImplBase {
             chordNode.stabilize();
             responseObserver.onNext(StabilizeResponse.newBuilder().setSuccess(true).build());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("stabilize failed");
             responseObserver.onNext(StabilizeResponse.newBuilder().setSuccess(false).build());
         }
         responseObserver.onCompleted();

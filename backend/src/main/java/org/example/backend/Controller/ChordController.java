@@ -90,7 +90,7 @@ public class ChordController {
         }
 
         boolean allNodesStarted = true;
-        for (int i = lastPort; i <= lastPort + nbNodes; i++) {
+        for (int i = lastPort; i < lastPort + nbNodes; i++) {
             NodeServices nodeServices = new NodeServices("localhost", i);
             try {
                 if (i == 8000) {

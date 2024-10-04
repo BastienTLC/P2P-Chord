@@ -8,7 +8,7 @@ const NodeView: React.FC = () => {
     const { selectedNode } = useChordStore();
 
     if (!selectedNode) {
-        return <div>Sélectionnez un nœud dans la vue du réseau.</div>;
+        return <div>Select node neetwork</div>;
     }
 
     const node: Node = selectedNode;

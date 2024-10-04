@@ -31,7 +31,7 @@ public class ChordClient {
             NodeInfo nodeInfo = blockingStub.findSuccessor(request);
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("findSuccessor failed");
             return null;
         }
     }
@@ -41,7 +41,7 @@ public class ChordClient {
             NodeInfo nodeInfo = blockingStub.getPredecessor(Empty.getDefaultInstance());
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("getPredecessor failed");
             return null;
         }
     }
@@ -55,7 +55,7 @@ public class ChordClient {
         try {
             blockingStub.setPredecessor(nodeInfo);
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("setPredecessor failed");
         }
     }
 
@@ -64,7 +64,7 @@ public class ChordClient {
             NodeInfo nodeInfo = blockingStub.getSuccessor(Empty.getDefaultInstance());
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("getSuccessor failed");
             return null;
         }
     }
@@ -78,7 +78,7 @@ public class ChordClient {
         try {
             blockingStub.setSuccessor(nodeInfo);
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("setSuccessor failed");
         }
     }
 
@@ -98,7 +98,7 @@ public class ChordClient {
         try {
             blockingStub.notify(request);
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("notify failed");
         }
     }
 
@@ -117,7 +117,7 @@ public class ChordClient {
         try {
             blockingStub.updateFingerTable(request);
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("updateFingerTable failed");
         }
     }
 
@@ -127,7 +127,7 @@ public class ChordClient {
             NodeInfo nodeInfo = blockingStub.closestPrecedingFinger(request);
             return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("closestPrecedingFinger failed");
             return null;
         }
 
@@ -143,7 +143,7 @@ public class ChordClient {
             StoreMessageResponse response = blockingStub.storeMessage(request);
             return response.getSuccess();
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("store failed");
             return false;
         }
     }
@@ -162,24 +162,8 @@ public class ChordClient {
                 return null;
             }
         } catch (StatusRuntimeException e) {
-            e.printStackTrace();
+            System.err.println("Message not found");
             return null;
         }
     }
-
-
-    public NodeHeader getNodeInfo() {
-        GetNodeInfoRequest request = GetNodeInfoRequest.newBuilder().build();
-
-        try {
-            GetNodeInfoResponse response = blockingStub.getNodeInfo(request);
-            NodeInfo nodeInfo = response.getNode();
-            return new NodeHeader(nodeInfo.getIp(), nodeInfo.getPort(), nodeInfo.getId());
-        } catch (StatusRuntimeException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Implement other client methods as needed...
 }

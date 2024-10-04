@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { Node } from '../models/Node';
-import {getNetworkRing, runNodes, setInitialNodes, stopNode} from '../services/ChordService';
+import { getNetworkRing, runNodes, setInitialNodes, stopNode } from '../services/ChordService';
 import { useChordStore } from '../store/store';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -15,21 +14,19 @@ const NetworkView: React.FC = () => {
     const [nbNodesToRun, setNbNodesToRun] = useState<number>(1);
     const toast = React.useRef<any>(null);
 
-    // Fonction pour récupérer la liste des nœuds
     const fetchNodes = async () => {
-        const nodes = await getNetworkRing(100); // Ajustez la profondeur selon vos besoins
+        const nodes = await getNetworkRing(100);
         setNodes(nodes);
     };
 
     useEffect(() => {
         fetchNodes();
 
-        // Rafraîchissement automatique toutes les 5 secondes
         const interval = setInterval(() => {
             fetchNodes();
         }, 5000);
 
-        return () => clearInterval(interval); // Nettoyer l'intervalle lors du démontage du composant
+        return () => clearInterval(interval);
     }, []);
 
     const onRowSelect = (event: any) => {
@@ -40,24 +37,23 @@ const NetworkView: React.FC = () => {
     const handleRunNodes = async () => {
         const success = await runNodes(nbNodesToRun);
         if (success) {
-            toast.current.show({ severity: 'success', summary: 'Succès', detail: `${nbNodesToRun} nœud(s) lancé(s).` });
-            fetchNodes(); // Rafraîchir la liste des nœuds immédiatement
+            toast.current.show({ severity: 'success', summary: 'Success', detail: `${nbNodesToRun} node(s) started.` });
+            fetchNodes();
         } else {
-            toast.current.show({ severity: 'error', summary: 'Erreur', detail: 'Échec du lancement des nœuds.' });
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to start nodes.' });
         }
     };
 
     const handleStopNode = async (node: Node) => {
         const success = await stopNode(node.ip, node.port);
         if (success) {
-            toast.current.show({ severity: 'success', summary: 'Succès', detail: `Nœud ${node.id} arrêté.` });
-            fetchNodes(); // Rafraîchir la liste des nœuds
+            toast.current.show({ severity: 'success', summary: 'Success', detail: `Node ${node.id} stopped.` });
+            fetchNodes();
         } else {
-            toast.current.show({ severity: 'error', summary: 'Erreur', detail: `Échec de l'arrêt du nœud ${node.id}.` });
+            toast.current.show({ severity: 'error', summary: 'Error', detail: `Failed to stop node ${node.id}.` });
         }
     };
 
-    // Template pour le bouton "Stop Node"
     const stopNodeButtonTemplate = (rowData: Node) => {
         return (
             <Button
@@ -73,11 +69,10 @@ const NetworkView: React.FC = () => {
         <div>
             <Toast ref={toast} />
 
-            <h2>Réseau Chord</h2>
+            <h2>Chord Network</h2>
 
-            {/* Section pour lancer des nœuds */}
             <div className="p-field p-grid">
-                <label htmlFor="nbNodes" className="p-col-fixed" style={{ width: '100px' }}>Nombre de nœuds :</label>
+                <label htmlFor="nbNodes" className="p-col-fixed" style={{ width: '100px' }}>Number of nodes:</label>
                 <div className="p-col">
                     <InputNumber
                         id="nbNodes"
@@ -88,11 +83,11 @@ const NetworkView: React.FC = () => {
                     />
                 </div>
                 <div className="p-col-fixed">
-                    <Button label="Start Node(s)" icon="pi pi-plus" onClick={handleRunNodes} />
+                    <Button label="Start Node" icon="pi pi-plus" onClick={handleRunNodes} />
                 </div>
             </div>
 
-            {/* Tableau des nœuds */}
+            {/* Nodes table */}
             <DataTable
                 value={nodes}
                 selectionMode="single"
